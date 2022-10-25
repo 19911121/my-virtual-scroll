@@ -1,7 +1,7 @@
 {
   "name": "my-virtual-scroll",
   "version": "1.0.0",
-  "description": "",
+  "description": "virtual scroll",
   "main": "dist/virtual-scroll.js",
   "module": "dist/es/virtual-scroll.js",
   "types": "dist/virtual-scroll.d.ts",
@@ -19,7 +19,7 @@
     "virtual-scroll",
     "vue-virtual-scroll"
   ],
-  "author": "",
+  "author": "19911121-minsoo",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/19911121/my-virtual-scroll/issues"

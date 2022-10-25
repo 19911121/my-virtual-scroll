@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "declaration": true,
+    "declarationDir": "./dist",
+    "strict": true,
+    "importsNotUsedAsValues": "error",
+    "isolatedModules": true,
+    "removeComments": true,
+  },
+  "include": [
+    ".eslintrc.json",
+    "rollup.config.ts",
+    "src"
+  ],
+  "exclude": ["dist", "node_modules", "examples", "rollup.config.ts"]
+}

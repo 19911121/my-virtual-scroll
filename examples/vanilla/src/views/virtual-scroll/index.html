@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <title>Example</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      .virtual-scroll__container {
+        overflow: auto;
+        max-width: 300px;
+        max-height: 300px;
+      }
+
+      .virtual-scroll__wrapper {
+        display: inline-block;
+      }
+
+      .virtual-scroll__container ul {
+        margin: 0;
+        padding: 0;
+      }
+
+      .virtual-scroll__container li {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Virtual Scroll</h1>
+      <template id="virtual-scroll-item">
+        <li>
+          <span class="{{rowIndex}}">
+            {{ value }}
+          </span>
+        </li>
+      </template>
+      <div
+        id="virtual-scroll-container-1"
+        class="virtual-scroll__container"
+      >
+        <ul
+          id="virtual-scroll-wrapper-1"
+          class="virtual-scroll__wrapper"
+        >
+        </ul>
+      </div>
+    </main>
+  </body>
+</html>

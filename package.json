@@ -2,9 +2,9 @@
   "name": "my-virtual-scroll",
   "version": "1.0.0",
   "description": "virtual scroll",
-  "main": "dist/virtual-scroll.js",
-  "module": "dist/es/virtual-scroll.js",
-  "types": "dist/virtual-scroll.d.ts",
+  "main": "./dist/my-virtual-scroll.js",
+  "module": "./dist/es/my-virtual-scroll.js",
+  "types": "./dist/my-virtual-scroll.d.ts",
   "source": "src/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

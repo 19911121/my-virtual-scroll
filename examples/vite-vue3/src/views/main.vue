@@ -1,6 +1,6 @@
 <template>
   <main>
-    <!-- <h1>
+    <h1>
       Virtual Scroll
     </h1>
 
@@ -32,7 +32,7 @@
           {{ row.value }}
         </span>
       </template>
-    </virtual-scroll> -->
+    </virtual-scroll>
 
     <h1>
       Virtual Scroll Table
@@ -43,14 +43,6 @@
       :rows="rows"
       :bench="1"
     >
-      <template #before-tbody>
-        <thead>
-          <tr>
-            <td>no</td>
-            <td>value</td>
-          </tr>
-        </thead>
-      </template>
       <template #default="{ row, rowIndex }">
         <tr>
           <td class="row">

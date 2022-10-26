@@ -107,7 +107,7 @@ const props = {
 // #endregion
 
 export default function virtualScrollComposable(emit: CustomEmit<Emits>, props: Props) {
-  const myVirtualScroll = ref<MyVirtualScroll<any> | null>(null);
+  let myVirtualScroll: MyVirtualScroll;
 
   /**
    * 렌더링 할 Rows
@@ -123,12 +123,12 @@ export default function virtualScrollComposable(emit: CustomEmit<Emits>, props: 
    * @param e 
    */
   const handleContainerScroll = (e: Event) => {
-    if (!myVirtualScroll.value) return;
+    if (!myVirtualScroll) return;
 
-    renderRows.value = myVirtualScroll.value.getRenderRows();
+    renderRows.value = myVirtualScroll.getRenderRows();
 
     updateWrapperStyle();
-    firstRenderRow.value = myVirtualScroll.value.getRenderFirstRow();
+    firstRenderRow.value = myVirtualScroll.getRenderFirstRow();
     emit('container-scroll', e);
   };
   // #endregion
@@ -136,11 +136,11 @@ export default function virtualScrollComposable(emit: CustomEmit<Emits>, props: 
   // #region wrapper
   const wrapperStyle = ref<Record<string, any>>();
   const updateWrapperStyle = () => {
-    if (!myVirtualScroll.value) return;
+    if (!myVirtualScroll) return;
     if ('string' === typeof props.wrapperStyle) return;
     
     wrapperStyle.value = {
-      ...myVirtualScroll.value.getWrapperStyle(),
+      ...myVirtualScroll.getWrapperStyle(),
       ...props.wrapperStyle,
     };
   };
@@ -161,23 +161,23 @@ export default function virtualScrollComposable(emit: CustomEmit<Emits>, props: 
       await nextTick();
       
       if (!refContainer.value || !refWrapper.value) return;
-      if (myVirtualScroll.value) {
-        const vs = myVirtualScroll.value.updateRows(newValue);
+      if (myVirtualScroll) {
+        const vs = myVirtualScroll.updateRows(newValue);
 
         vs.rendered();
       }
       else {
-        myVirtualScroll.value = new MyVirtualScroll(refContainer.value, refWrapper.value, {
+        myVirtualScroll = new MyVirtualScroll(refContainer.value, refWrapper.value, {
           rowHeight: props.rowHeight,
           bench: props.bench,
           rows: newValue,
           direction: props.direction
         });
-        myVirtualScroll.value.addContainerScrollEvent(handleContainerScroll);
+        myVirtualScroll.addContainerScrollEvent(handleContainerScroll);
       }
 
       updateWrapperStyle();
-      renderRows.value = myVirtualScroll.value.getRenderRows();
+      renderRows.value = myVirtualScroll.getRenderRows();
       
       emit('updated');
     }, {

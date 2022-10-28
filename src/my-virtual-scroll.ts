@@ -26,7 +26,7 @@ interface Options<R = any> {
   /**
    * 가상 스크롤 사용할 방향
    */
-  direction: 'vertical';
+  direction: 'vertical' | 'horizontal';
 }
 
 /**
@@ -150,7 +150,9 @@ class MyVirtualScroll<R = any> {
       direction: options?.direction ?? 'vertical',
     };
     this.rows = options?.rows ?? [];
-    this.referenceCoordinates = ['top', 'bottom'];
+
+    if (this.isVerticalScroll()) this.referenceCoordinates = ['top', 'bottom'];
+    else this.referenceCoordinates = ['left', 'right'];
 
     this.init();
   }
@@ -165,6 +167,20 @@ class MyVirtualScroll<R = any> {
   }
 
   // #region 공통
+  /**
+   * 세로 스크롤 사용여부 반환
+   */
+  private isVerticalScroll() {
+    return 'vertical' === this.options.direction;
+  }
+
+  /**
+   * 가로 스크롤 존재여부 반환
+   */
+  private hasHorizontalScroll() {
+    return this.wrapperWidth > this.getContainerWidth();
+  }
+
   /**
    * 세로 스크롤 존재여부 반환
    */
@@ -278,9 +294,17 @@ class MyVirtualScroll<R = any> {
   public getWrapperStyle(): StyleReturnType {
     const styles: StyleReturnType = {};
 
-    if (this.hasVerticalScroll()) {
-      styles.transform = `translateY(${this.wrapperPaddingTop}px)`;
-      styles.height = `${this.wrapperHeight - this.wrapperPaddingTop}px`;
+    if (this.isVerticalScroll()) {
+      if (this.hasVerticalScroll()) {
+        styles.transform = `translateY(${this.wrapperPaddingTop}px)`;
+        styles.height = `${this.wrapperHeight - this.wrapperPaddingTop}px`;
+      }
+    }
+    else {
+      if (this.hasHorizontalScroll()) {
+        styles.transform = `translateX(${this.wrapperPaddingLeft}px)`;
+        styles.width = `${this.wrapperWidth}px`;
+      }
     }
 
     return styles;
@@ -435,7 +459,7 @@ class MyVirtualScroll<R = any> {
    * @param fr 첫번째 row
    */
   private getLastRow(scroll: number, fr?: number): number {
-    const containerSize = this.getContainerHeight();
+    const containerSize = 'horizontal' === this.options.direction ? this.getContainerWidth() : this.getContainerHeight();
     const [refFirstCoordinate] = this.referenceCoordinates;
     const firstRow = fr ?? this.getFirstRow(scroll);
     let lastRow = this.rowRects.slice(firstRow, this.rows.length).findIndex((v) => {
@@ -525,6 +549,20 @@ class MyVirtualScroll<R = any> {
   }
 
   /**
+   * 가로 스크롤에 따른 가상스크롤 실행
+   */
+  private execHorizontalScroll(scrollLeft: number): void {
+    const firstRow = this.getFirstRow(scrollLeft);
+    const firstBenchRow = this.getFirstBenchRow(firstRow);
+    const lastRow = this.getLastRow(scrollLeft, firstRow);
+    const lastBenchRow = this.getLastBenchRow(lastRow);
+    const beforeRowsWidth = this.getBeforeBenchWidth(firstRow);
+
+    this.renderRows = this.rows.slice(firstBenchRow, lastBenchRow);
+    this.wrapperPaddingLeft = scrollLeft - beforeRowsWidth;
+  }
+
+  /**
    * 스크롤 이벤트 추가
    */
   public addContainerScrollEvent(cb: ScrollCallBack): void {
@@ -547,7 +585,8 @@ class MyVirtualScroll<R = any> {
     const target = e.target;
 
     if (target instanceof HTMLElement) {
-      this.execVerticalScroll(target.scrollTop);
+      if ('horizontal' === this.options.direction) this.execHorizontalScroll(target.scrollLeft);
+      else this.execVerticalScroll(target.scrollTop);
     }
 
     this.callback?.(e);

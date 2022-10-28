@@ -1,6 +1,6 @@
 {
   "name": "my-virtual-scroll",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "virtual scroll",
   "main": "./dist/my-virtual-scroll.js",
   "module": "./dist/es/my-virtual-scroll.js",

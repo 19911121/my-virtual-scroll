@@ -9,11 +9,15 @@ npm i my-virtual-scroll
 ## 사용
 
 ``` typescript
+interface Row {
+  name: string;
+}
 // 스크롤이 생성되는 영역
 const container: Element;
 // 컨텐츠 영역
 const wrapper: Element;
-const myVirtualScroll = new MyVirtualScroll(container, wrapper, {
+// or const myVirtualScroll = new MyVirtualScroll(container, wrapper, {
+const myVirtualScroll = new MyVirtualScroll<Row>(container, wrapper, {
   // 옵션
   rowHeight: 30,
   bench: 0,
@@ -133,7 +137,7 @@ Requried: `false`
 ### `direction`
 
 Type: `vertical`  
-Default: `0`
+Default: `vertical`
 Requried: `false`
 
 가상 스크롤 사용할 방향입니다.

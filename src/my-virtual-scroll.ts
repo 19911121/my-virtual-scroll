@@ -208,7 +208,7 @@ class MyVirtualScroll<R = any> {
   /**
    * container 상하 여백 반환
    */
-  public getContainerPaddingVertical(): number {
+  private getContainerPaddingVertical(): number {
     const styles = this.containerStyles;
     const verticalPadding = Number.parseFloat(styles['paddingTop']) + Number.parseFloat(styles['paddingBottom']);
 
@@ -218,7 +218,7 @@ class MyVirtualScroll<R = any> {
   /**
    * container 상단 여백 반환
    */
-  public getContainerPaddingTop(): number {
+  private getContainerPaddingTop(): number {
     const styles = this.containerStyles;
     const paddingTop = Number.parseFloat(styles['paddingTop']);
 
@@ -228,7 +228,7 @@ class MyVirtualScroll<R = any> {
   /**
    * container 하단 여백
    */
-  public getContainerPaddingBottom(): number {
+  private getContainerPaddingBottom(): number {
     const styles = this.containerStyles;
     const paddingBottom = Number.parseFloat(styles['paddingBottom']);
 
@@ -238,14 +238,14 @@ class MyVirtualScroll<R = any> {
   /**
    * container 높이 반환
    */
-  public getContainerHeight(): number {
+  private getContainerHeight(): number {
     return this.refContainer.offsetHeight;
   }
 
   /**
    * container 넓이 반환
    */
-  public getContainerWidth(): number {
+  private getContainerWidth(): number {
     return this.refContainer.offsetWidth;
   }
 
@@ -451,8 +451,7 @@ class MyVirtualScroll<R = any> {
    * 화면에 표시할 Rows 추가
    * @param children
    */
-  public addRenderRows(children: HTMLCollection, height: number): void {
-    this.wrapperHeight += height;
+  public addRenderRows(children: HTMLCollection): void {
     this.rowRects = this.rowRects.concat(
       Array.from(children).map((v) => {
         const rect = this.convertDOMRectToScrollRect(v.getBoundingClientRect());
@@ -543,7 +542,7 @@ class MyVirtualScroll<R = any> {
    *
    * @param e 
    */
-  public handleContainerScroll(e: Event): void {
+  private handleContainerScroll(e: Event): void {
     const target = e.target;
 
     if (target instanceof HTMLElement) {

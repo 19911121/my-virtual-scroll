@@ -105,7 +105,7 @@ interface CustomNode {
         const addContainer = d.getElementById('virtual-scroll-wrapper-2');
         const children = addContainer?.children;
 
-        if (children) virtualScroll.addRenderRows(children, addContainer?.offsetHeight || 0);
+        if (children) virtualScroll.addRenderRows(children);
       }, 5000);
     }
   });

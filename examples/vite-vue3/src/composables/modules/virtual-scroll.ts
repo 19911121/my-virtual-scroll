@@ -191,7 +191,6 @@ export default function virtualScrollComposable(emit: CustomEmit<Emits>, props: 
   });
 
   return {
-    myVirtualScroll,
     refContainer,
     renderRows,
     refWrapper,

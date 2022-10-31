@@ -23,22 +23,13 @@ class MyVirtualScroll {
             direction: (_c = options === null || options === void 0 ? void 0 : options.direction) !== null && _c !== void 0 ? _c : 'vertical',
         };
         this.rows = (_d = options === null || options === void 0 ? void 0 : options.rows) !== null && _d !== void 0 ? _d : [];
-        if (this.isVerticalScroll())
-            this.referenceCoordinates = ['top', 'bottom'];
-        else
-            this.referenceCoordinates = ['left', 'right'];
+        this.referenceCoordinates = ['top', 'bottom'];
         this.init();
     }
     init() {
         this.initContainer();
         this.initWrapper();
         this.initRender();
-    }
-    isVerticalScroll() {
-        return 'vertical' === this.options.direction;
-    }
-    hasHorizontalScroll() {
-        return this.wrapperWidth > this.getContainerWidth();
     }
     hasVerticalScroll() {
         return this.wrapperHeight > this.getContainerHeight();
@@ -93,29 +84,11 @@ class MyVirtualScroll {
     initWrapper() {
         this.wrapperStyles = window.getComputedStyle(this.refWrapper);
     }
-    getWrapperMarginTop() {
-        const styles = this.wrapperStyles;
-        const verticalMarginTop = Number.parseFloat(styles['marginTop']);
-        return verticalMarginTop;
-    }
-    getWrapperMarginVertical() {
-        const styles = this.wrapperStyles;
-        const verticalMarginBottom = Number.parseFloat(styles['marginBottom']);
-        return verticalMarginBottom;
-    }
     getWrapperStyle() {
         const styles = {};
-        if (this.isVerticalScroll()) {
-            if (this.hasVerticalScroll()) {
-                styles.transform = `translateY(${this.wrapperPaddingTop}px)`;
-                styles.height = `${this.wrapperHeight - this.wrapperPaddingTop}px`;
-            }
-        }
-        else {
-            if (this.hasHorizontalScroll()) {
-                styles.transform = `translateX(${this.wrapperPaddingLeft}px)`;
-                styles.width = `${this.wrapperWidth}px`;
-            }
+        if (this.hasVerticalScroll()) {
+            styles.transform = `translateY(${this.wrapperPaddingTop}px)`;
+            styles.height = `${this.wrapperHeight - this.wrapperPaddingTop}px`;
         }
         return styles;
     }
@@ -131,7 +104,7 @@ class MyVirtualScroll {
         const firstRowRect = this.rowRects[firstRow];
         const beforeBenchRowsRect = this.getBeforeBenchRows(firstRow);
         const beforeBenchFirstRowRect = beforeBenchRowsRect[0];
-        const firstRowHideHeight = firstRowRect[refFirstCoordinate] - this.containerRect[refFirstCoordinate] - scroll - this.getWrapperMarginTop() + this.calibrationScroll;
+        const firstRowHideHeight = firstRowRect[refFirstCoordinate] - this.containerRect[refFirstCoordinate] - scroll + this.calibrationScroll;
         return beforeBenchRowsRect.length ? firstRowRect[refFirstCoordinate] - beforeBenchFirstRowRect[refFirstCoordinate] - firstRowHideHeight : -firstRowHideHeight;
     }
     initDynamicRenderRows() {
@@ -194,7 +167,7 @@ class MyVirtualScroll {
         return this.rowRects.slice(this.getFirstBenchRow(firstRow), firstRow);
     }
     getLastRow(scroll, fr) {
-        const containerSize = 'horizontal' === this.options.direction ? this.getContainerWidth() : this.getContainerHeight();
+        const containerSize = this.getContainerHeight();
         const [refFirstCoordinate] = this.referenceCoordinates;
         const firstRow = fr !== null && fr !== void 0 ? fr : this.getFirstRow(scroll);
         let lastRow = this.rowRects.slice(firstRow, this.rows.length).findIndex((v) => {
@@ -203,8 +176,7 @@ class MyVirtualScroll {
         lastRow = -1 === lastRow ? this.rows.length : firstRow + lastRow;
         return Math.min(this.rows.length, lastRow);
     }
-    addRenderRows(children, height) {
-        this.wrapperHeight += height;
+    addRenderRows(children) {
         this.rowRects = this.rowRects.concat(Array.from(children).map((v) => {
             const rect = this.convertDOMRectToScrollRect(v.getBoundingClientRect());
             return Object.assign(Object.assign({}, rect), { top: (this.wrapperHeight += rect.top), bottom: (this.wrapperHeight += rect.bottom) });
@@ -241,15 +213,6 @@ class MyVirtualScroll {
         const scrollTop = rect[refFirstCoordinate] - this.containerRect[refFirstCoordinate] + this.calibrationScroll;
         this.refContainer.scrollTo(this.refContainer.scrollLeft, scrollTop);
     }
-    execHorizontalScroll(scrollLeft) {
-        const firstRow = this.getFirstRow(scrollLeft);
-        const firstBenchRow = this.getFirstBenchRow(firstRow);
-        const lastRow = this.getLastRow(scrollLeft, firstRow);
-        const lastBenchRow = this.getLastBenchRow(lastRow);
-        const beforeRowsWidth = this.getBeforeBenchWidth(firstRow);
-        this.renderRows = this.rows.slice(firstBenchRow, lastBenchRow);
-        this.wrapperPaddingLeft = scrollLeft - beforeRowsWidth;
-    }
     addContainerScrollEvent(cb) {
         this.callback = cb;
     }
@@ -260,10 +223,7 @@ class MyVirtualScroll {
         var _a;
         const target = e.target;
         if (target instanceof HTMLElement) {
-            if ('horizontal' === this.options.direction)
-                this.execHorizontalScroll(target.scrollLeft);
-            else
-                this.execVerticalScroll(target.scrollTop);
+            this.execVerticalScroll(target.scrollTop);
         }
         (_a = this.callback) === null || _a === void 0 ? void 0 : _a.call(this, e);
     }

@@ -178,6 +178,7 @@ class MyVirtualScroll<R = any> {
    * @param domrect DOMRect
    */
   private convertDOMRectToScrollRect(domrect: DOMRect) {
+    // this.rowRects =
     const rect: ScrollRect = {
       top: domrect.top,
       right: domrect.right,
@@ -191,6 +192,7 @@ class MyVirtualScroll<R = any> {
 
     return rect;
   }
+
   // #endregion
 
   // #region container
@@ -202,37 +204,7 @@ class MyVirtualScroll<R = any> {
     this.addContainerEvent();
     this.containerRect = this.convertDOMRectToScrollRect(this.refContainer.getBoundingClientRect());
     this.containerStyles = window.getComputedStyle(this.refContainer);
-    this.calibrationScroll = this.refContainer.scrollTop - this.wrapperPaddingTop;
-  }
-
-  /**
-   * container 상하 여백 반환
-   */
-  private getContainerPaddingVertical(): number {
-    const styles = this.containerStyles;
-    const verticalPadding = Number.parseFloat(styles['paddingTop']) + Number.parseFloat(styles['paddingBottom']);
-
-    return verticalPadding;
-  }
-
-  /**
-   * container 상단 여백 반환
-   */
-  private getContainerPaddingTop(): number {
-    const styles = this.containerStyles;
-    const paddingTop = Number.parseFloat(styles['paddingTop']);
-
-    return paddingTop;
-  }
-
-  /**
-   * container 하단 여백
-   */
-  private getContainerPaddingBottom(): number {
-    const styles = this.containerStyles;
-    const paddingBottom = Number.parseFloat(styles['paddingBottom']);
-
-    return paddingBottom;
+    this.calibrationScroll = this.refContainer.scrollTop;
   }
 
   /**
@@ -270,6 +242,66 @@ class MyVirtualScroll<R = any> {
    */
   private initWrapper() {
     this.wrapperStyles = window.getComputedStyle(this.refWrapper);
+  }
+
+  /**
+   * container 상단 여백 반환
+   */
+   private getWrapperMarginTop(): number {
+    const styles = this.wrapperStyles;
+    const marginTop = Number.parseFloat(styles['marginTop']);
+
+    return marginTop;
+  }
+
+  /**
+   * container 하단 여백
+   */
+  private getWrapperMarginBottom(): number {
+    const styles = this.wrapperStyles;
+    const marginBottom = Number.parseFloat(styles['marginBottom']);
+
+    return marginBottom;
+  }
+
+  /**
+   * container 상하 여백 반환
+   */
+  private getWrapperMarginVertical(): number {
+    const styles = this.wrapperStyles;
+    const verticalMargin = Number.parseFloat(styles['marginTop']) + Number.parseFloat(styles['marginBottom']);
+
+    return verticalMargin;
+  }
+
+  /**
+   * container 상단 여백 반환
+   */
+  private getWrapperPaddingTop(): number {
+    const styles = this.wrapperStyles;
+    const paddingTop = Number.parseFloat(styles['paddingTop']);
+
+    return paddingTop;
+  }
+
+  /**
+   * container 하단 여백
+   */
+  private getWrapperPaddingBottom(): number {
+    const styles = this.wrapperStyles;
+    const paddingBottom = Number.parseFloat(styles['paddingBottom']);
+
+    return paddingBottom;
+  }
+
+  /**
+   * container 상하 여백 반환
+   */
+  private getWrapperPaddingVertical(): number {
+    const styles = this.wrapperStyles;
+    const verticalPadding = Number.parseFloat(styles['paddingTop']) + Number.parseFloat(styles['paddingBottom']);
+
+    return verticalPadding;
   }
 
   /**
@@ -327,14 +359,18 @@ class MyVirtualScroll<R = any> {
    * 화면에 표시할 동적 Rows 초기화
    */
   private initDynamicRenderRows(): void {
+    const wrapperElementChildren = this.refWrapper.children;
+
+    if (this.rows.length !== wrapperElementChildren.length) console.warn('렌더링 된 Row 개수와 전체 Row 개수가 일치하지 않아 정상적으로 표시되지 않을 수 있습니다.');
+    
     this.renderRows = this.rows;
-    this.rowRects = Array.from(this.refWrapper.children).map((v) => this.convertDOMRectToScrollRect(v.getBoundingClientRect()));
+    this.rowRects = Array.from(wrapperElementChildren).map((v) => this.convertDOMRectToScrollRect(v.getBoundingClientRect()));
     this.wrapperWidth = this.refWrapper.offsetWidth;
     this.wrapperHeight = this.refWrapper.offsetHeight;
 
     this.execVerticalScroll(this.refContainer.scrollTop);
 
-    if (this.hasVerticalScroll()) this.wrapperHeight += this.getContainerPaddingVertical();
+    if (this.hasVerticalScroll()) this.wrapperHeight += this.getWrapperPaddingVertical() + this.getWrapperMarginVertical();
   }
 
   /**
@@ -364,7 +400,7 @@ class MyVirtualScroll<R = any> {
 
     this.execVerticalScroll(this.refContainer.scrollTop);
 
-    if (this.hasVerticalScroll()) this.wrapperHeight += this.getContainerPaddingVertical();
+    if (this.hasVerticalScroll()) this.wrapperHeight += this.getWrapperPaddingVertical() + this.getWrapperMarginVertical();
   }
 
   /**
@@ -465,7 +501,7 @@ class MyVirtualScroll<R = any> {
     );
     this.execVerticalScroll(this.refContainer.scrollTop);
 
-    if (this.hasVerticalScroll()) this.wrapperHeight += this.getContainerPaddingVertical();
+    if (this.hasVerticalScroll()) this.wrapperHeight += this.getWrapperPaddingVertical() + this.getWrapperMarginVertical();
   }
 
   /**
@@ -498,6 +534,12 @@ class MyVirtualScroll<R = any> {
    * @param scrollTop
    */
   private execVerticalScroll(scrollTop: number): void {
+    if (!this.rows.length) {
+      console.warn('스크롤 이벤트가 발생 하였지만 등록 된 rows가 없습니다.');
+
+      return;
+    }
+
     const firstRow = this.getFirstRow(scrollTop);
     const firstBenchRow = this.getFirstBenchRow(firstRow);
     const lastRow = this.getLastRow(scrollTop, firstRow);
@@ -507,7 +549,7 @@ class MyVirtualScroll<R = any> {
     this.renderFirstRow = firstBenchRow;
     this.renderLastRow = lastBenchRow;
     this.renderRows = this.rows.slice(firstBenchRow, lastBenchRow);
-    this.wrapperPaddingTop = scrollTop - beforeRowsHeight - this.getContainerPaddingBottom() / 2;
+    this.wrapperPaddingTop = scrollTop - beforeRowsHeight - this.getWrapperPaddingTop() - this.getWrapperMarginTop();
   }
 
   /**
@@ -516,6 +558,12 @@ class MyVirtualScroll<R = any> {
    * @param row 이동 할 row
    */
   public moveVerticalScrollToRow(row: number): void {
+    if (!this.rows.length) {
+      console.warn('rows가 존재하지 않습니다.');
+
+      return;
+    }
+
     const [refFirstCoordinate] = this.referenceCoordinates;
     const rect = this.rowRects[row];
     const scrollTop = rect[refFirstCoordinate] - this.containerRect[refFirstCoordinate] + this.calibrationScroll;

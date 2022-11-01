@@ -1,11 +1,11 @@
 {
   "name": "my-virtual-scroll",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "my-virtual scroll",
   "main": "./dist/my-virtual-scroll.js",
   "module": "./dist/es/my-virtual-scroll.js",
   "types": "./dist/my-virtual-scroll.d.ts",
-  "source": "src/index.ts",
+  "source": "src/my-virtual-scroll.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint . --ext .ts",

@@ -27,7 +27,7 @@
   </head>
   <body>
     <main>
-      <h1>Virtual Scroll</h1>
+      <h1>Virtual Scroll(자동 스타일 적용)</h1>
       <template id="virtual-scroll-item">
         <li>
           <span class="{{rowIndex}}">
@@ -41,6 +41,18 @@
       >
         <ul
           id="virtual-scroll-wrapper-1"
+          class="virtual-scroll__wrapper"
+        >
+        </ul>
+      </div>
+
+      <h1>Virtual Scroll(자동 스타일 적용하지 않음)</h1>
+      <div
+        id="virtual-scroll-container-2"
+        class="virtual-scroll__container"
+      >
+        <ul
+          id="virtual-scroll-wrapper-2"
           class="virtual-scroll__wrapper"
         >
         </ul>

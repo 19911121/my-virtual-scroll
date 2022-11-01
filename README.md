@@ -23,6 +23,7 @@ const myVirtualScroll = new MyVirtualScroll<Row>(container, wrapper, {
   bench: 0,
   rows: [],
   direction: 'vertical'
+  autoStyles: true
 });
 myVirtualScroll.addContainerScrollEvent(handleContainerScroll);
 ```
@@ -141,6 +142,14 @@ Default: `vertical`
 Requried: `false`
 
 가상 스크롤 사용할 방향입니다.
+
+### `autoStyles`
+
+Type: `boolean`  
+Default: `false`
+Requried: `false`
+
+스타일을 자동으로 업데이트 합니다.
 
 ## Examples
 

@@ -85,7 +85,7 @@
     value: number;
   }
 
-  const rows: Ref<Row[]> = ref(Array.from({ length: 5000 }, (_, i): Row => {
+  const rows: Ref<Row[]> = ref(Array.from({ length: 1000 }, (_, i): Row => {
     return {
       index: i + 1,
       value: i
@@ -99,15 +99,15 @@
     setTimeout(() => {
       console.log('add rows!');
 
-      const newRows: Row[] = Array.from({ length: 5000 }, (_, i): Row => {
+      const newRows: Row[] = Array.from({ length: 1000 }, (_, i): Row => {
         return {
-          index: 100 + i + 1,
-          value: 100 + i
+          index: 1000 + i + 1,
+          value: 1000 + i
         };
       });
 
       rows.value = rows.value.concat(newRows);
-    }, 10000);
+    }, 3000);
   });
 </script>
 

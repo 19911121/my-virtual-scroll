@@ -66,7 +66,6 @@ class MyVirtualScroll<R = any> {
   private rows: Row<R>[] = [];
 
   // #region container (root, 스크롤 생성 영역)
-
   /** 가상스크롤을 적용 할 container (root, 스크롤 생성 영역) */
   private refContainer: HTMLElement;
 
@@ -75,11 +74,9 @@ class MyVirtualScroll<R = any> {
 
   /** container styles */
   private containerStyles!: CSSStyleDeclaration;
-
   // #endregion
 
   // #region wrapper (body, contents 영역)
-
   /** 가상스크롤을 적용 할 wrapper (body, contents 영역) */
   private refWrapper: HTMLElement;
 
@@ -113,7 +110,6 @@ class MyVirtualScroll<R = any> {
 
   /** Row 에 대한 Rect 정보를 담고있는 배열 */
   private rowRects: ScrollRect[] = [];
-
   // #endregion
 
   // #region etc
@@ -333,7 +329,10 @@ class MyVirtualScroll<R = any> {
   private resetWrapperStyles = () => {
     if (!this.options.autoStyles) return;
 
-    this.refWrapper.style.transform = 'none';
+    const translateY = 'translateY(0px)';
+
+    this.refWrapper.style.transform.replace(/translateY(.*.)/, translateY)
+    this.refWrapper.style.transform = this.refWrapper.style.transform.replace(/translateY(.*.)/, translateY);
     this.refWrapper.style.height = 'auto';
   };
 

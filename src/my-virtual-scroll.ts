@@ -27,6 +27,10 @@ interface Options<R = any> {
    * 가상 스크롤 사용할 방향
    */
   direction: 'vertical';
+  /**
+   * 스타일 자동등록 여부
+   */
+  autoStyles: boolean;
 }
 
 /**
@@ -62,7 +66,6 @@ class MyVirtualScroll<R = any> {
   private rows: Row<R>[] = [];
 
   // #region container (root, 스크롤 생성 영역)
-
   /** 가상스크롤을 적용 할 container (root, 스크롤 생성 영역) */
   private refContainer: HTMLElement;
 
@@ -71,11 +74,9 @@ class MyVirtualScroll<R = any> {
 
   /** container styles */
   private containerStyles!: CSSStyleDeclaration;
-
   // #endregion
 
   // #region wrapper (body, contents 영역)
-
   /** 가상스크롤을 적용 할 wrapper (body, contents 영역) */
   private refWrapper: HTMLElement;
 
@@ -109,7 +110,6 @@ class MyVirtualScroll<R = any> {
 
   /** Row 에 대한 Rect 정보를 담고있는 배열 */
   private rowRects: ScrollRect[] = [];
-
   // #endregion
 
   // #region etc
@@ -148,6 +148,7 @@ class MyVirtualScroll<R = any> {
       rowHeight: options?.rowHeight ?? 0,
       bench: options?.bench ?? 0,
       direction: options?.direction ?? 'vertical',
+      autoStyles: options?.autoStyles ?? false,
     };
     this.rows = options?.rows ?? [];
     this.referenceCoordinates = ['top', 'bottom'];
@@ -192,7 +193,6 @@ class MyVirtualScroll<R = any> {
 
     return rect;
   }
-
   // #endregion
 
   // #region container
@@ -308,15 +308,46 @@ class MyVirtualScroll<R = any> {
    * wrapper 스타일 반환
    */
   public getWrapperStyle(): StyleReturnType {
+    const transform = this.wrapperStyles.getPropertyValue('transform');
     const styles: StyleReturnType = {};
 
     if (this.hasVerticalScroll()) {
-      styles.transform = `translateY(${this.wrapperPaddingTop}px)`;
+      const translateY = `translateY(${this.wrapperPaddingTop}px)`;
+
+      styles.transform = 'none' === transform
+        ? translateY
+        : this.refWrapper.style.transform.replace(/translateY(.*.)/, translateY);
       styles.height = `${this.wrapperHeight - this.wrapperPaddingTop}px`;
     }
 
     return styles;
   }
+
+  /**
+   * wrapper styles을 초기화 합니다.
+   */
+  private resetWrapperStyles = () => {
+    if (!this.options.autoStyles) return;
+
+    const translateY = 'translateY(0px)';
+
+    this.refWrapper.style.transform.replace(/translateY(.*.)/, translateY)
+    this.refWrapper.style.transform = this.refWrapper.style.transform.replace(/translateY(.*.)/, translateY);
+    this.refWrapper.style.height = 'auto';
+  };
+
+  /**
+   * wrapper styles을 업데이트 합니다.
+   */
+  private updateWrapperStyles = () => {
+    if (!this.options.autoStyles) return;
+
+    const styles = this.getWrapperStyle();
+
+    for (const [k, v] of Object.entries(styles)) {
+      if (Reflect.has(this.refWrapper.style, k)) this.refWrapper.style.setProperty(k, v?.toString() ?? '');
+    }
+  };
   // #endregion
 
   // #region 가로
@@ -407,6 +438,8 @@ class MyVirtualScroll<R = any> {
    * render 초기화
    */
   private initRender() {
+    this.resetWrapperStyles();
+    
     if (this.options.rowHeight) this.initRenderRows();
     else this.initDynamicRenderRows();
   }
@@ -534,11 +567,7 @@ class MyVirtualScroll<R = any> {
    * @param scrollTop
    */
   private execVerticalScroll(scrollTop: number): void {
-    if (!this.rows.length) {
-      console.warn('스크롤 이벤트가 발생 하였지만 등록 된 rows가 없습니다.');
-
-      return;
-    }
+    if (!this.rows.length) return;
 
     const firstRow = this.getFirstRow(scrollTop);
     const firstBenchRow = this.getFirstBenchRow(firstRow);
@@ -550,6 +579,8 @@ class MyVirtualScroll<R = any> {
     this.renderLastRow = lastBenchRow;
     this.renderRows = this.rows.slice(firstBenchRow, lastBenchRow);
     this.wrapperPaddingTop = scrollTop - beforeRowsHeight - this.getWrapperPaddingTop() - this.getWrapperMarginTop();
+
+    this.updateWrapperStyles();
   }
 
   /**

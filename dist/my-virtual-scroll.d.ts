@@ -5,6 +5,7 @@ interface Options<R = any> {
     rowHeight: number;
     bench: number;
     direction: 'vertical';
+    autoStyles: boolean;
 }
 declare type ScrollRect = Pick<DOMRect, 'top' | 'right' | 'bottom' | 'left' | 'width' | 'height' | 'x' | 'y'>;
 declare type ScrollCallBack = (e: Event) => void;
@@ -39,15 +40,20 @@ declare class MyVirtualScroll<R = any> {
     private hasVerticalScroll;
     private convertDOMRectToScrollRect;
     private initContainer;
-    private getContainerPaddingVertical;
-    private getContainerPaddingTop;
-    private getContainerPaddingBottom;
     private getContainerHeight;
     private getContainerWidth;
     private addContainerEvent;
     private removeContainerEvent;
     private initWrapper;
+    private getWrapperMarginTop;
+    private getWrapperMarginBottom;
+    private getWrapperMarginVertical;
+    private getWrapperPaddingTop;
+    private getWrapperPaddingBottom;
+    private getWrapperPaddingVertical;
     getWrapperStyle(): StyleReturnType;
+    private resetWrapperStyles;
+    private updateWrapperStyles;
     private getBeforeBenchWidth;
     private getBeforeBenchHeight;
     private initDynamicRenderRows;

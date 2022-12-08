@@ -14,9 +14,9 @@ interface Options<R = any> {
    */
   rows?: Row<R>[];
   /**
-   * Row 높이 값(px)
+   * Row 넓이 or 높이 값
    */
-  rowHeight: number;
+  rowSize: number;
   /**
    * 위아래 추가로 보여 줄 Row 갯수
    *
@@ -27,6 +27,16 @@ interface Options<R = any> {
    * 가상 스크롤 사용할 방향
    */
   direction: 'vertical' | 'horizontal';
+  /**
+   * 스타일 자동등록 여부
+   */
+  autoStyles: boolean;
+
+  /**
+   * FIXME: 호환성 떄문에 남겨 둠
+   * Row 높이 값(px)
+   */
+  rowHeight: number;
 }
 
 /**
@@ -62,20 +72,14 @@ class MyVirtualScroll<R = any> {
   private rows: Row<R>[] = [];
 
   // #region container (root, 스크롤 생성 영역)
-
   /** 가상스크롤을 적용 할 container (root, 스크롤 생성 영역) */
   private refContainer: HTMLElement;
 
   /** continaer 영역 좌표 */
   private containerRect!: ScrollRect;
-
-  /** container styles */
-  private containerStyles!: CSSStyleDeclaration;
-
   // #endregion
 
   // #region wrapper (body, contents 영역)
-
   /** 가상스크롤을 적용 할 wrapper (body, contents 영역) */
   private refWrapper: HTMLElement;
 
@@ -109,7 +113,6 @@ class MyVirtualScroll<R = any> {
 
   /** Row 에 대한 Rect 정보를 담고있는 배열 */
   private rowRects: ScrollRect[] = [];
-
   // #endregion
 
   // #region etc
@@ -145,16 +148,20 @@ class MyVirtualScroll<R = any> {
     this.refContainer = container;
     this.refWrapper = wrapper;
     this.options = {
+      rowSize: options?.rowHeight ?? options?.rowSize ?? 0,
       rowHeight: options?.rowHeight ?? 0,
       bench: options?.bench ?? 0,
       direction: options?.direction ?? 'vertical',
+      autoStyles: options?.autoStyles ?? false,
     };
     this.rows = options?.rows ?? [];
 
-    if (this.isVerticalScroll()) this.referenceCoordinates = ['top', 'bottom'];
-    else this.referenceCoordinates = ['left', 'right'];
+    if ('horizontal' === this.options.direction) this.referenceCoordinates = ['left', 'right'];
+    else this.referenceCoordinates = ['top', 'bottom'];
 
     this.init();
+
+    if (this.options.rowHeight) console.warn('rowHeight 대신 rowSize를 사용해 주세요! rowHeight는 곧 삭제됩니다.');
   }
 
   /**
@@ -167,13 +174,6 @@ class MyVirtualScroll<R = any> {
   }
 
   // #region 공통
-  /**
-   * 세로 스크롤 사용여부 반환
-   */
-  private isVerticalScroll() {
-    return 'vertical' === this.options.direction;
-  }
-
   /**
    * 가로 스크롤 존재여부 반환
    */
@@ -217,51 +217,20 @@ class MyVirtualScroll<R = any> {
     this.removeContainerEvent();
     this.addContainerEvent();
     this.containerRect = this.convertDOMRectToScrollRect(this.refContainer.getBoundingClientRect());
-    this.containerStyles = window.getComputedStyle(this.refContainer);
-    this.calibrationScroll = this.refContainer.scrollTop - this.wrapperPaddingTop;
-  }
-
-  /**
-   * container 상하 여백 반환
-   */
-  public getContainerPaddingVertical(): number {
-    const styles = this.containerStyles;
-    const verticalPadding = Number.parseFloat(styles['paddingTop']) + Number.parseFloat(styles['paddingBottom']);
-
-    return verticalPadding;
-  }
-
-  /**
-   * container 상단 여백 반환
-   */
-  public getContainerPaddingTop(): number {
-    const styles = this.containerStyles;
-    const paddingTop = Number.parseFloat(styles['paddingTop']);
-
-    return paddingTop;
-  }
-
-  /**
-   * container 하단 여백
-   */
-  public getContainerPaddingBottom(): number {
-    const styles = this.containerStyles;
-    const paddingBottom = Number.parseFloat(styles['paddingBottom']);
-
-    return paddingBottom;
+    this.calibrationScroll = this.refContainer.scrollTop;
   }
 
   /**
    * container 높이 반환
    */
-  public getContainerHeight(): number {
+  private getContainerHeight(): number {
     return this.refContainer.offsetHeight;
   }
 
   /**
    * container 넓이 반환
    */
-  public getContainerWidth(): number {
+  private getContainerWidth(): number {
     return this.refContainer.offsetWidth;
   }
 
@@ -289,61 +258,168 @@ class MyVirtualScroll<R = any> {
   }
 
   /**
+   * container 상단 여백 반환
+   */
+  private getWrapperMarginTop(): number {
+    const styles = this.wrapperStyles;
+    const marginTop = Number.parseFloat(styles['marginTop']);
+
+    return marginTop;
+  }
+
+  /**
+   * container 좌측 여백 반환
+   */
+   private getWrapperMarginLeft(): number {
+    const styles = this.wrapperStyles;
+    const marginLeft = Number.parseFloat(styles['marginLeft']);
+
+    return marginLeft;
+  }
+
+  /**
+   * container 상하 여백 반환
+   */
+  private getWrapperMarginVertical(): number {
+    const styles = this.wrapperStyles;
+    const verticalMargin = Number.parseFloat(styles['marginTop']) + Number.parseFloat(styles['marginBottom']);
+
+    return verticalMargin;
+  }
+
+  /**
+   * container 좌우 여백 반환
+   */
+  private getWrapperMarginHorizontal(): number {
+    const styles = this.wrapperStyles;
+    const verticalMargin = Number.parseFloat(styles['marginLeft']) + Number.parseFloat(styles['marginRight']);
+
+    return verticalMargin;
+  }
+
+  /**
+   * container 상단 여백 반환
+   */
+  private getWrapperPaddingTop(): number {
+    const styles = this.wrapperStyles;
+    const paddingTop = Number.parseFloat(styles['paddingTop']);
+
+    return paddingTop;
+  }
+
+  /**
+   * container 좌측 여백 반환
+   */
+  private getWrapperPaddingLeft(): number {
+    const styles = this.wrapperStyles;
+    const paddingLeft = Number.parseFloat(styles['paddingLeft']);
+
+    return paddingLeft;
+  }
+
+  /**
+   * container 상하 여백 반환
+   */
+  private getWrapperPaddingVertical(): number {
+    const styles = this.wrapperStyles;
+    const verticalPadding = Number.parseFloat(styles['paddingTop']) + Number.parseFloat(styles['paddingBottom']);
+
+    return verticalPadding;
+  }
+
+  /**
+   * container 좌우 여백 반환
+   */
+  private getWrapperPaddingHorizontal(): number {
+    const styles = this.wrapperStyles;
+    const horizontalPadding = Number.parseFloat(styles['paddingLeft']) + Number.parseFloat(styles['paddingRight']);
+
+    return horizontalPadding;
+  }
+
+  /**
    * wrapper 스타일 반환
    */
   public getWrapperStyle(): StyleReturnType {
+    const transform = this.wrapperStyles.getPropertyValue('transform');
     const styles: StyleReturnType = {};
 
-    if (this.isVerticalScroll()) {
-      if (this.hasVerticalScroll()) {
-        styles.transform = `translateY(${this.wrapperPaddingTop}px)`;
-        styles.height = `${this.wrapperHeight - this.wrapperPaddingTop}px`;
+    if ('horizontal' === this.options.direction) {
+      if (this.hasHorizontalScroll()) {
+        const translateX = `translateX(${this.wrapperPaddingLeft}px)`;
+
+        styles.transform = 'none' === transform
+          ? translateX
+          : this.refWrapper.style.transform.replace(/translateX(.*.)/, translateX);
+          styles.width = `${this.wrapperWidth - this.wrapperPaddingLeft}px`;
       }
     }
     else {
-      if (this.hasHorizontalScroll()) {
-        styles.transform = `translateX(${this.wrapperPaddingLeft}px)`;
-        styles.width = `${this.wrapperWidth}px`;
+      if (this.hasVerticalScroll()) {
+        const translateY = `translateY(${this.wrapperPaddingTop}px)`;
+
+        styles.transform = 'none' === transform
+          ? translateY
+          : this.refWrapper.style.transform.replace(/translateY(.*.)/, translateY);
+          styles.height = `${this.wrapperHeight - this.wrapperPaddingTop}px`;
       }
     }
 
     return styles;
   }
+
+  /**
+   * wrapper styles을 초기화 합니다.
+   */
+  private resetWrapperStyles = () => {
+    if (!this.options.autoStyles) return;
+
+    if ('horizontal' === this.options.direction) {
+      const translateX = 'translateX(0px)';
+  
+      this.refWrapper.style.transform.replace(/translateX(.+)/, translateX)
+      this.refWrapper.style.transform = this.refWrapper.style.transform.replace(/translateX(.+)/, translateX);
+      this.refWrapper.style.width = 'auto';
+    }
+    else {
+      const translateY = 'translateY(0px)';
+  
+      this.refWrapper.style.transform.replace(/translateY(.+)/, translateY)
+      this.refWrapper.style.transform = this.refWrapper.style.transform.replace(/translateY(.+)/, translateY);
+      this.refWrapper.style.height = 'auto';
+    }
+  };
+
+  /**
+   * wrapper styles을 업데이트 합니다.
+   */
+  private updateWrapperStyles = () => {
+    if (!this.options.autoStyles) return;
+
+    const styles = this.getWrapperStyle();
+
+    for (const [k, v] of Object.entries(styles)) {
+      if (Reflect.has(this.refWrapper.style, k)) this.refWrapper.style.setProperty(k, v?.toString() ?? '');
+    }
+  };
   // #endregion
 
-  // #region 가로
+  // #region Bench
   /**
-   * 화면에 표시 할 bench rows width 합
+   * 화면에 표시 할 bench rows (width | height) 합
    *
    * @param firstRow
    */
-  private getBeforeBenchWidth(firstRow: number): number {
-    const [refFirstCoordinate, refLastCoordinate] = this.referenceCoordinates;
-    const beforeBenchRows = this.getBeforeBenchRows(firstRow);
-    const beforeBenchFirstRow = beforeBenchRows[0];
-    const beforeBenchLastRow = beforeBenchRows.slice(-1)[0];
-
-    return beforeBenchRows.length ? beforeBenchLastRow[refLastCoordinate] - beforeBenchFirstRow[refFirstCoordinate] : 0;
-  }
-  // #endregion
-
-  // #region 세로
-  /**
-   * 화면에 표시 할 bench rows height 합
-   *
-   * @param firstRow
-   */
-  private getBeforeBenchHeight(scroll: number, firstRow: number): number {
+  private getBeforeBenchSize(scroll: number, firstRow: number): number {
     const [refFirstCoordinate] = this.referenceCoordinates;
     const firstRowRect = this.rowRects[firstRow];
     const beforeBenchRowsRect = this.getBeforeBenchRows(firstRow);
     const beforeBenchFirstRowRect = beforeBenchRowsRect[0];
-    /** 첫번쨰 Row 가려진 높이 값 */
-    const firstRowHideHeight = firstRowRect[refFirstCoordinate] - this.containerRect[refFirstCoordinate] - scroll + this.calibrationScroll;
+    /** 첫번쨰 Row 가려진 사이즈 */
+    const firstRowHideSize = firstRowRect[refFirstCoordinate] - this.containerRect[refFirstCoordinate] - scroll + this.calibrationScroll;
 
-    return beforeBenchRowsRect.length ? firstRowRect[refFirstCoordinate] - beforeBenchFirstRowRect[refFirstCoordinate] - firstRowHideHeight : -firstRowHideHeight;
+    return beforeBenchRowsRect.length ? firstRowRect[refFirstCoordinate] - beforeBenchFirstRowRect[refFirstCoordinate] - firstRowHideSize : -firstRowHideSize;
   }
-
   // #endregion
 
   // #region rows
@@ -351,51 +427,82 @@ class MyVirtualScroll<R = any> {
    * 화면에 표시할 동적 Rows 초기화
    */
   private initDynamicRenderRows(): void {
+    const wrapperElementChildren = this.refWrapper.children;
+
+    if (this.rows.length !== wrapperElementChildren.length) console.warn('렌더링 된 Row 개수와 전체 Row 개수가 일치하지 않아 정상적으로 표시되지 않을 수 있습니다.', `rows length ${this.rows.length}`, `child length ${wrapperElementChildren.length}`);
+    
     this.renderRows = this.rows;
-    this.rowRects = Array.from(this.refWrapper.children).map((v) => this.convertDOMRectToScrollRect(v.getBoundingClientRect()));
+    this.rowRects = Array.from(wrapperElementChildren).map((v) => this.convertDOMRectToScrollRect(v.getBoundingClientRect()));
     this.wrapperWidth = this.refWrapper.offsetWidth;
     this.wrapperHeight = this.refWrapper.offsetHeight;
 
     this.execVerticalScroll(this.refContainer.scrollTop);
 
-    if (this.hasVerticalScroll()) this.wrapperHeight += this.getContainerPaddingVertical();
+    if ('horizontal' === this.options.direction && this.hasHorizontalScroll()) this.wrapperWidth += this.getWrapperPaddingHorizontal() + this.getWrapperMarginHorizontal();
+    else if ('vertical' === this.options.direction && this.hasVerticalScroll()) this.wrapperHeight += this.getWrapperPaddingVertical() + this.getWrapperMarginVertical();
   }
 
   /**
    * 화면에 표시 할 Rows 초기화
    */
   private initRenderRows(): void {
-    const rowHeight = this.options.rowHeight;
+    const rowSize = this.options.rowSize;
 
     this.renderRows = this.rows;
-    this.rowRects = Array.from(this.rows).map((v, i) => {
-      const top = this.containerRect.top + rowHeight * i;
-      // const left = this.containerRect.left + rowHeight * i;
 
-      return {
-        top,
-        right: 0,
-        bottom: top + rowHeight,
-        left: 0,
-        width: 0,
-        height: 0,
-        x: 0,
-        y: 0,
-      };
-    });
-    this.wrapperWidth = this.refWrapper.offsetWidth;
-    this.wrapperHeight = this.rows.length * rowHeight;
-
-    this.execVerticalScroll(this.refContainer.scrollTop);
-
-    if (this.hasVerticalScroll()) this.wrapperHeight += this.getContainerPaddingVertical();
+    if ('horizontal' === this.options.direction) {
+      this.rowRects = Array.from(this.rows).map((v, i) => {
+        const left = this.containerRect.left + rowSize * i;
+  
+        return {
+          top: 0,
+          right: left + rowSize,
+          bottom: 0,
+          left,
+          width: 0,
+          height: 0,
+          x: 0,
+          y: 0,
+        };
+      });
+      this.wrapperWidth = this.rows.length * rowSize;
+      this.wrapperHeight = this.refWrapper.offsetHeight;
+  
+      this.execHorizontalScroll(this.refContainer.scrollTop);
+  
+      if (this.hasHorizontalScroll()) this.wrapperWidth += this.getWrapperPaddingHorizontal() + this.getWrapperMarginHorizontal();
+    }
+    else {
+      this.rowRects = Array.from(this.rows).map((v, i) => {
+        const top = this.containerRect.top + rowSize * i;
+  
+        return {
+          top,
+          right: 0,
+          bottom: top + rowSize,
+          left: 0,
+          width: 0,
+          height: 0,
+          x: 0,
+          y: 0,
+        };
+      });
+      this.wrapperWidth = this.refWrapper.offsetWidth;
+      this.wrapperHeight = this.rows.length * rowSize;
+  
+      this.execVerticalScroll(this.refContainer.scrollTop);
+  
+      if (this.hasVerticalScroll()) this.wrapperHeight += this.getWrapperPaddingVertical() + this.getWrapperMarginVertical();
+    }
   }
 
   /**
    * render 초기화
    */
   private initRender() {
-    if (this.options.rowHeight) this.initRenderRows();
+    this.resetWrapperStyles();
+    
+    if (this.options.rowSize) this.initRenderRows();
     else this.initDynamicRenderRows();
   }
 
@@ -475,22 +582,39 @@ class MyVirtualScroll<R = any> {
    * 화면에 표시할 Rows 추가
    * @param children
    */
-  public addRenderRows(children: HTMLCollection, height: number): void {
-    this.wrapperHeight += height;
-    this.rowRects = this.rowRects.concat(
-      Array.from(children).map((v) => {
-        const rect = this.convertDOMRectToScrollRect(v.getBoundingClientRect());
-
-        return {
-          ...rect,
-          top: (this.wrapperHeight += rect.top),
-          bottom: (this.wrapperHeight += rect.bottom),
-        };
-      }),
-    );
-    this.execVerticalScroll(this.refContainer.scrollTop);
-
-    if (this.hasVerticalScroll()) this.wrapperHeight += this.getContainerPaddingVertical();
+  public addRenderRows(children: HTMLCollection): void {
+    if ('horizontal' === this.options.direction) {
+      this.rowRects = this.rowRects.concat(
+        Array.from(children).map((v) => {
+          const rect = this.convertDOMRectToScrollRect(v.getBoundingClientRect());
+  
+          return {
+            ...rect,
+            left: (this.wrapperWidth += rect.left),
+            right: (this.wrapperWidth += rect.right),
+          };
+        }),
+      );
+      this.execHorizontalScroll(this.refContainer.scrollTop);
+  
+      if (this.hasHorizontalScroll()) this.wrapperWidth += this.getWrapperPaddingHorizontal() + this.getWrapperMarginHorizontal();
+    }
+    else {
+      this.rowRects = this.rowRects.concat(
+        Array.from(children).map((v) => {
+          const rect = this.convertDOMRectToScrollRect(v.getBoundingClientRect());
+  
+          return {
+            ...rect,
+            top: (this.wrapperHeight += rect.top),
+            bottom: (this.wrapperHeight += rect.bottom),
+          };
+        }),
+      );
+      this.execVerticalScroll(this.refContainer.scrollTop);
+  
+      if (this.hasVerticalScroll()) this.wrapperHeight += this.getWrapperPaddingVertical() + this.getWrapperMarginVertical();
+    }
   }
 
   /**
@@ -523,16 +647,22 @@ class MyVirtualScroll<R = any> {
    * @param scrollTop
    */
   private execVerticalScroll(scrollTop: number): void {
+    if (!this.rows.length) return;
+
     const firstRow = this.getFirstRow(scrollTop);
     const firstBenchRow = this.getFirstBenchRow(firstRow);
     const lastRow = this.getLastRow(scrollTop, firstRow);
     const lastBenchRow = this.getLastBenchRow(lastRow);
-    const beforeRowsHeight = this.getBeforeBenchHeight(scrollTop, firstRow);
+    const beforeRowsHeight = this.getBeforeBenchSize(scrollTop, firstRow);
 
     this.renderFirstRow = firstBenchRow;
     this.renderLastRow = lastBenchRow;
     this.renderRows = this.rows.slice(firstBenchRow, lastBenchRow);
-    this.wrapperPaddingTop = scrollTop - beforeRowsHeight - this.getContainerPaddingBottom() / 2;
+    this.wrapperPaddingTop = scrollTop - beforeRowsHeight - this.getWrapperPaddingTop() - this.getWrapperMarginTop();
+
+    // console.log('scrollTop: ', scrollTop, beforeRowsHeight, this.getWrapperPaddingTop(), this.getWrapperMarginTop());
+
+    this.updateWrapperStyles();
   }
 
   /**
@@ -541,6 +671,12 @@ class MyVirtualScroll<R = any> {
    * @param row 이동 할 row
    */
   public moveVerticalScrollToRow(row: number): void {
+    if (!this.rows.length) {
+      console.warn('rows가 존재하지 않습니다.');
+
+      return;
+    }
+
     const [refFirstCoordinate] = this.referenceCoordinates;
     const rect = this.rowRects[row];
     const scrollTop = rect[refFirstCoordinate] - this.containerRect[refFirstCoordinate] + this.calibrationScroll;
@@ -552,14 +688,24 @@ class MyVirtualScroll<R = any> {
    * 가로 스크롤에 따른 가상스크롤 실행
    */
   private execHorizontalScroll(scrollLeft: number): void {
+    if (!this.rows.length) return;
+
+    console.log('execHorizontalScroll', scrollLeft);
+
     const firstRow = this.getFirstRow(scrollLeft);
     const firstBenchRow = this.getFirstBenchRow(firstRow);
     const lastRow = this.getLastRow(scrollLeft, firstRow);
     const lastBenchRow = this.getLastBenchRow(lastRow);
-    const beforeRowsWidth = this.getBeforeBenchWidth(firstRow);
+    const beforeRowsWidth = this.getBeforeBenchSize(scrollLeft, firstRow);
 
+    this.renderFirstRow = firstBenchRow;
+    this.renderLastRow = lastBenchRow;
     this.renderRows = this.rows.slice(firstBenchRow, lastBenchRow);
-    this.wrapperPaddingLeft = scrollLeft - beforeRowsWidth;
+    this.wrapperPaddingLeft = scrollLeft - beforeRowsWidth - this.getWrapperPaddingLeft() - this.getWrapperMarginLeft();
+
+    console.log('scrollLeft: ', firstRow, scrollLeft, beforeRowsWidth, scrollLeft - beforeRowsWidth);
+
+    this.updateWrapperStyles();
   }
 
   /**
@@ -581,7 +727,7 @@ class MyVirtualScroll<R = any> {
    *
    * @param e 
    */
-  public handleContainerScroll(e: Event): void {
+  private handleContainerScroll(e: Event): void {
     const target = e.target;
 
     if (target instanceof HTMLElement) {

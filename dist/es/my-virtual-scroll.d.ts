@@ -1,21 +1,20 @@
 import type * as CSS from 'csstype';
-declare type Row<T = any> = T;
-interface Options<R = any> {
+declare type Row<T = unknown> = T;
+interface Options<R> {
     rows?: Row<R>[];
     rowHeight: number;
     bench: number;
-    direction: 'vertical';
-    autoStyles: boolean;
+    direction: 'vertical' | 'horizontal';
 }
 declare type ScrollRect = Pick<DOMRect, 'top' | 'right' | 'bottom' | 'left' | 'width' | 'height' | 'x' | 'y'>;
 declare type ScrollCallBack = (e: Event) => void;
 declare type UpdateRowReturnType = {
     rendered: () => void;
 };
-interface StyleReturnType extends CSS.Properties<string | number>, CSS.PropertiesHyphen<string | number> {
+declare type StyleReturnType = CSS.Properties & CSS.PropertiesHyphen & {
     [index: string]: any;
-}
-declare class MyVirtualScroll<R = any> {
+};
+declare class MyVirtualScroll<R = unknown> {
     private options;
     private rows;
     private refContainer;
@@ -37,23 +36,22 @@ declare class MyVirtualScroll<R = any> {
     private callback;
     constructor(container: HTMLElement, wrapper: HTMLElement, options?: Partial<Options<R>>);
     private init;
+    private isVerticalScroll;
+    private hasHorizontalScroll;
     private hasVerticalScroll;
     private convertDOMRectToScrollRect;
     private initContainer;
-    private getContainerHeight;
-    private getContainerWidth;
+    getContainerPaddingVertical(): number;
+    getContainerPaddingTop(): number;
+    getContainerPaddingBottom(): number;
+    getContainerHeight(): number;
+    getContainerWidth(): number;
     private addContainerEvent;
     private removeContainerEvent;
     private initWrapper;
-    private getWrapperMarginTop;
-    private getWrapperMarginBottom;
-    private getWrapperMarginVertical;
-    private getWrapperPaddingTop;
-    private getWrapperPaddingBottom;
-    private getWrapperPaddingVertical;
+    getWrapperMarginTop(): number;
+    getWrapperMarginVertical(): number;
     getWrapperStyle(): StyleReturnType;
-    private resetWrapperStyles;
-    private updateWrapperStyles;
     private getBeforeBenchWidth;
     private getBeforeBenchHeight;
     private initDynamicRenderRows;
@@ -66,14 +64,15 @@ declare class MyVirtualScroll<R = any> {
     private getFirstBenchRow;
     private getBeforeBenchRows;
     private getLastRow;
-    addRenderRows(children: HTMLCollection): void;
+    addRenderRows(children: HTMLCollection, height: number): void;
     updateRows(rows: Row<R>[]): UpdateRowReturnType;
     private getLastBenchRow;
     private execVerticalScroll;
     moveVerticalScrollToRow(row: number): void;
+    private execHorizontalScroll;
     addContainerScrollEvent(cb: ScrollCallBack): void;
     removeContainerScrollEvent(): void;
-    private handleContainerScroll;
+    handleContainerScroll(e: Event): void;
 }
 export default MyVirtualScroll;
-export type { Row as MyVirtualScrollRow, Options as MyVirtualScrollOptions, ScrollRect as MyVirtualScrollScrollRect, ScrollCallBack as MyVirtualScrollScrollCallBack, UpdateRowReturnType as MyVirtualScrollUpdateRow, StyleReturnType as MyVirtualScrollStyle, };
+export { Row as MyVirtualScrollRow, Options as MyVirtualScrollOptions, ScrollRect as MyVirtualScrollScrollRect, ScrollCallBack as MyVirtualScrollScrollCallBack, UpdateRowReturnType as MyVirtualScrollUpdateRow, StyleReturnType as MyVirtualScrollStyle, };

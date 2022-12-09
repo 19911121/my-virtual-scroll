@@ -1,25 +1,7 @@
 <template>
   <main>
     <h1>
-      Virtual Scroll(자동 스타일 적용)
-    </h1>
-
-    <virtual-scroll
-      class="virtual-scroll__conatiner"
-      :rows="rows"
-      :bench="3"
-      auto-styles
-    >
-      <template #default="{ row, rowIndex }">
-        <span>
-          <em class="row">{{ rowIndex }}</em>
-          {{ row.value }}
-        </span>
-      </template>
-    </virtual-scroll>
-
-    <h1>
-      Virtual Scroll(자동 스타일 적용 안함)
+      Virtual Scroll
     </h1>
 
     <virtual-scroll
@@ -75,7 +57,7 @@
   </main>
 </template>
 <script setup lang="ts">
-  import { nextTick, onMounted, ref } from 'vue';
+  import { ref } from 'vue';
   import virtualScroll from '@/components/modules/virtual-scroll.vue';
   import virtualScrollTable from '@/components/modules/virtual-scroll-table.vue';
   import type { Ref } from 'vue';
@@ -85,30 +67,24 @@
     value: number;
   }
 
-  const rows: Ref<Row[]> = ref(Array.from({ length: 1000 }, (_, i): Row => {
+  const rows: Ref<Row[]> = ref(Array.from({ length: 10000 }, (_, i): Row => {
     return {
       index: i + 1,
       value: i
     };
   }));
 
-
-  onMounted(async () => {
-    await nextTick();
-
-    setTimeout(() => {
-      console.log('add rows!');
-
-      const newRows: Row[] = Array.from({ length: 1000 }, (_, i): Row => {
-        return {
-          index: 1000 + i + 1,
-          value: 1000 + i
-        };
-      });
-
-      rows.value = rows.value.concat(newRows);
-    }, 3000);
-  });
+  // onMounted(() => {
+  //   setTimeout(() => {
+  //     console.log('row update!');
+  //     rows.value = rows.value.map(v => {
+  //       return {
+  //         row: v.row * 2,
+  //         value: v.value * 2
+  //       };
+  //     });
+  //   }, 5000);
+  // });
 </script>
 
 <style lang="scss" scoped>

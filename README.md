@@ -91,14 +91,6 @@ const rendered = myVirtualScroll.updateRows();
 rendered();
 ```
 
-### `addRenderRows`
-
-Rows를 추가 합니다.
-
-``` typescript
-myVirtualScroll.addRenderRows([]);
-```
-
 ### `moveVerticalScrollToRow`
 
 Row에 해당하는 위치로 스크롤을 이동시킵니다.

@@ -13,106 +13,100 @@ interface CustomNode {
 }
 
 (function(w, d) {
+  console.log(w);
+
   const commons = new Commons<Row>();
-  const rows = Array.from({ length: 100 }, (_, i): Row => {
+  const rows = Array.from({ length: 1000 }, (_, i): Row => {
     return {
       rowIndex: i,
       value: i
     };
   });
-  const virtualScrolls: MyVirtualScroll<Row>[] = [];
-  const itemNodes: CustomNode[][] = [];
-  let containers: HTMLElement[] = [];
-  let wrappers: HTMLElement[] = [];
-  let itemTemplate: HTMLTemplateElement | null = null;
+  let container: HTMLElement  | null = null;
+  let wrapper: HTMLElement  | null = null;
+  let itemTemplate: HTMLTemplateElement  | null = null;
+  let virtualScroll: MyVirtualScroll<Row>;
+  
+  const customNodes: CustomNode[] = [];
 
-  const render = (vsIndex: number, renderRows: Row[]) => {
-    const wrapper = wrappers[vsIndex];
-    const renderNodes = itemNodes[vsIndex];
-    
+  const render = (renderRows: Row[]) => {
     if (wrapper && itemTemplate) {
       const children = wrapper.children;
       const rowCount = Math.max(children.length, renderRows.length);
 
-      for (let i = 0; i < rowCount; i++) {
+      for (let i = 0; i < rowCount + 1; i++) {
         const el = children[i];
+        const customNode = customNodes[i];
         const row = renderRows[i];
-        const renderNode = renderNodes[i];
+
+        if (!row && !customNode) {
+          if (el) el.remove();
+
+          continue;
+        }
 
         if (row) {
-          if (renderNode) {
-            for (let i = 0; i < renderNode.replaceNodes.length; i++) {
-              const replaceNode = renderNode.replaceNodes[i];
-              const originalNode = renderNode.originalNodes[i];
-  
-              commons.updateNodeValue(replaceNode, originalNode, row);
-            }
-          }
-          else {
+          if (!customNode) {
             const customReplaceNode = commons.createReplaceNode(itemTemplate, row);
 
-            renderNodes.push(customReplaceNode);
+            customNodes.push(customReplaceNode);
 
             if (el) el.replaceWith(customReplaceNode.template);
             else wrapper.appendChild(customReplaceNode.template);
           }
-        }
-        else {
-          Array.from(children).slice(i).forEach(v => v.remove());
-
-          break;
+          else {
+            for (let i = 0; i < customNode.replaceNodes.length; i++) {
+              const replaceNode = customNode.replaceNodes[i];
+              const originalNode = customNode.originalNodes[i];
+  
+              commons.updateNodeValue(replaceNode, originalNode, row);
+            }
+          }
         }
       }
 
-      renderNodes.splice(renderRows.length);
+      customNodes.splice(renderRows.length);
     }
   };
 
-  const update = (vsIndex: number) => {
-    const wrapper = wrappers[vsIndex];
-
+  const update = () => {
     if (!wrapper) return;
 
-    const virtualScroll = virtualScrolls[vsIndex];
+    const styles = virtualScroll.getWrapperStyle();
     const renderRows = virtualScroll.getRenderRows();
 
-    render(vsIndex, renderRows);
+    render(renderRows);
 
-    if (0 !== vsIndex) {
-      const styles = virtualScroll.getWrapperStyle();
-
-      for (const [k, v] of Object.entries(styles)) {
-        if (Reflect.has(wrapper.style, k)) wrapper.style.setProperty(k, v?.toString() ?? '');
-      }
+    for (const [k, v] of Object.entries(styles)) {
+      if (Reflect.has(wrapper.style, k)) wrapper.style.setProperty(k, v?.toString() ?? '');
     }
   };
 
   w.addEventListener('DOMContentLoaded', () => {
+    container = d.getElementById('virtual-scroll-container-1');
+    wrapper = d.getElementById('virtual-scroll-wrapper-1');
     itemTemplate = d.querySelector<HTMLTemplateElement>('#virtual-scroll-item');
 
-    for (let i = 0; i < 2; i++) {
-      const container = d.getElementById(`virtual-scroll-container-${i + 1}`);
-      const wrapper = d.getElementById(`virtual-scroll-wrapper-${i + 1}`);
+    render(rows);
 
-      if (container && wrapper) {
-        containers.push(container);
-        wrappers.push(wrapper);
-        itemNodes[i] = [];
+    if (container && wrapper) {
+      virtualScroll = new MyVirtualScroll(container, wrapper, {
+        rows: rows
+      });
+      virtualScroll.addContainerScrollEvent((e) => {
+        update();
+      });
 
-        render(i, rows);
+      setTimeout(() => {
+        update();
+      }, 1000);
 
-        const virtualScroll = new MyVirtualScroll(container, wrapper, {
-          rows: rows,
-          autoStyles: 0 === i
-        });
-        virtualScroll.addContainerScrollEvent(_ => {
-          update(i);
-        });
+      setTimeout(() => {
+        const addContainer = d.getElementById('virtual-scroll-wrapper-2');
+        const children = addContainer?.children;
 
-        virtualScrolls.push(virtualScroll);
-        
-        update(i);
-      } 
+        if (children) virtualScroll.addRenderRows(children, addContainer?.offsetHeight || 0);
+      }, 5000);
     }
   });
 })(window, document);

@@ -1,4 +1,4 @@
-import { computed, nextTick, onMounted, PropType, ref, watch } from 'vue';
+import { nextTick, onMounted, PropType, ref, watch } from 'vue';
 import MyVirtualScroll from '../../../../../src/my-virtual-scroll';
 import type { MyVirtualScrollOptions } from '../../../../../src/my-virtual-scroll';
 import type { CustomEmit, PropRequiredTrue } from '@/interfaces/types';
@@ -6,6 +6,8 @@ import type { CustomEmit, PropRequiredTrue } from '@/interfaces/types';
 // #region Emits & Props
 type Emits = 'container-scroll' | 'updated';
 interface Props {
+  uniqueKey: string | number | symbol;
+  direction: MyVirtualScrollOptions['direction'];
   containerTag: string;
   containerClass: string | Record<string, any>;
   containerStyle: Record<string, any>;
@@ -15,14 +17,19 @@ interface Props {
   itemTag: string;
   itemClass: string | Record<string, any>;
   itemStyle: Record<string, any>;
-  rowHeight: MyVirtualScrollOptions['rowHeight'];
+  rowSize: MyVirtualScrollOptions['rowSize'];
   bench: MyVirtualScrollOptions['bench'];
   rows: any[];
-  direction: MyVirtualScrollOptions['direction'];
+  autoStyles: boolean;
 }
 
 const emits: Emits[] = ['container-scroll', 'updated'];
 const props = {
+  uniqueKey: {
+    type: [String, Number, Symbol] as PropType<Props['uniqueKey']>,
+    required: true as const,
+  },
+
   /** 스크롤 방향 */
   direction: {
     type: String as PropType<Props['direction']>,
@@ -87,8 +94,8 @@ const props = {
   },
 
   /** row height (px) */
-  rowHeight: {
-    type: Number as PropType<Props['rowHeight']>,
+  rowSize: {
+    type: Number as PropType<Props['rowSize']>,
     default: 0,
     required: false,
   },
@@ -102,6 +109,12 @@ const props = {
   rows: {
     type: Array as PropType<Props['rows']>,
     required: true as PropRequiredTrue,
+  },
+
+  autoStyles: {
+    type: Boolean as PropType<Props['autoStyles']>,
+    default: false,
+    required: false,
   },
 };
 // #endregion
@@ -127,14 +140,25 @@ export default function virtualScrollComposable(emit: CustomEmit<Emits>, props: 
 
     renderRows.value = myVirtualScroll.getRenderRows();
 
-    updateWrapperStyle();
+    if (!props.autoStyles) updateWrapperStyle();
+
     firstRenderRow.value = myVirtualScroll.getRenderFirstRow();
+
     emit('container-scroll', e);
   };
   // #endregion
 
   // #region wrapper
   const wrapperStyle = ref<Record<string, any>>();
+  const resetWrapperStyles = () => {
+    if (!myVirtualScroll) return;
+    if ('string' === typeof props.wrapperStyle) return;
+    
+    wrapperStyle.value = {
+      ...props.wrapperStyle,
+    };
+  };
+
   const updateWrapperStyle = () => {
     if (!myVirtualScroll) return;
     if ('string' === typeof props.wrapperStyle) return;
@@ -156,7 +180,7 @@ export default function virtualScrollComposable(emit: CustomEmit<Emits>, props: 
 
     watch(() => props.rows, async (newValue) => {
       // 동적으로 생성하는 경우에는 초기 데이터 필요
-      if (!props.rowHeight) renderRows.value = newValue;
+      if (!props.rowSize) renderRows.value = newValue;
 
       await nextTick();
       
@@ -164,21 +188,28 @@ export default function virtualScrollComposable(emit: CustomEmit<Emits>, props: 
       if (myVirtualScroll) {
         const vs = myVirtualScroll.updateRows(newValue);
 
+        // 동적 렌더링인 경우 스타일 초기화 후
+        if (!props.rowSize) resetWrapperStyles();
+
+        await nextTick();
         vs.rendered();
       }
       else {
         myVirtualScroll = new MyVirtualScroll(refContainer.value, refWrapper.value, {
-          rowHeight: props.rowHeight,
+          rowSize: props.rowSize,
           bench: props.bench,
           rows: newValue,
-          direction: props.direction
+          direction: props.direction,
+          autoStyles: props.autoStyles,
         });
         myVirtualScroll.addContainerScrollEvent(handleContainerScroll);
+
+        renderRows.value = myVirtualScroll.getRenderRows();
+        firstRenderRow.value = myVirtualScroll.getRenderFirstRow();
       }
 
-      updateWrapperStyle();
-      renderRows.value = myVirtualScroll.getRenderRows();
-      
+      if (!props.autoStyles) updateWrapperStyle();
+
       emit('updated');
     }, {
       immediate: true,
@@ -191,7 +222,7 @@ export default function virtualScrollComposable(emit: CustomEmit<Emits>, props: 
   });
 
   return {
-    myVirtualScroll,
+    resetWrapperStyles,
     refContainer,
     renderRows,
     refWrapper,

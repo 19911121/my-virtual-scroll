@@ -14,7 +14,7 @@
       <component
         :is="itemTag"
         v-for="(row, index) in renderRows"
-        :key="`virtual-scroll-item-${index}`"
+        :key="row[uniqueKey]"
         :class="itemClass"
         :style="itemStyle"
       >

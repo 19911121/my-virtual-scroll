@@ -18,7 +18,7 @@
           <slot name="before-tr"></slot>
           <template
             v-for="(row, index) in renderRows"
-            :key="`virtual-scroll-table-row-${index}`"
+            :key="row[uniqueKey]"
           >
             <slot
               :row="row"

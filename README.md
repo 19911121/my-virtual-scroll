@@ -19,7 +19,7 @@ const wrapper: Element;
 // or const myVirtualScroll = new MyVirtualScroll(container, wrapper, {
 const myVirtualScroll = new MyVirtualScroll<Row>(container, wrapper, {
   // 옵션
-  rowHeight: 30,
+  rowSize: 30,
   bench: 0,
   rows: [],
   direction: 'vertical'
@@ -108,13 +108,13 @@ Type: `Row<R>[]`
 Default: `[]`
 Requried: `false`
 
-### `rowHeight`
+### `rowSize`
 
 Type: `number`  
 Default: `0`
 Requried: `false`
 
-row의 높이 값(px) 입니다.
+row의 너비 및 높이 값(px) 입니다.
 0 입력 시 동적으로 계산되며, 동적으로 계산 시 최초 한 번 모든 Row가 노출됩니다.
 
 ### `bench`
@@ -129,11 +129,11 @@ Requried: `false`
 
 ### `direction`
 
-Type: `vertical`  
+Type: `horizontal` | `vertical`
 Default: `vertical`
 Requried: `false`
 
-가상 스크롤 사용할 방향입니다.
+가상 스크롤 사용할 방향입니다. (가로, 세로)
 
 ### `autoStyles`
 

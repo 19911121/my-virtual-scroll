@@ -428,14 +428,8 @@ class MyVirtualScroll<R = any> {
     this.wrapperWidth = this.refWrapper.offsetWidth;
     this.wrapperHeight = this.refWrapper.offsetHeight;
 
-    if ('horizontal' === this.options.direction) {
-      this.execHorizontalScroll(this.refContainer.scrollLeft);
-
-    }
-    else {
-      this.execVerticalScroll(this.refContainer.scrollTop);
-
-    }
+    if ('horizontal' === this.options.direction) this.execHorizontalScroll(this.refContainer.scrollLeft);
+    else this.execVerticalScroll(this.refContainer.scrollTop);
   }
 
   /**

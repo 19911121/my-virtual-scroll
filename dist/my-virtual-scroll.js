@@ -293,7 +293,6 @@ class MyVirtualScroll {
     }
     updateRows(rows) {
         this.rows = rows;
-        console.log(this.refWrapper.children.length);
         return {
             rendered: () => {
                 if (!this.options.rowSize)

@@ -605,7 +605,7 @@ class MyVirtualScroll<R = any> {
    */
   public updateRows(rows: Row<R>[]): UpdateRowReturnType {
     this.rows = rows;
-    console.log(this.refWrapper.children.length);
+    
     return {
       /**
        * rows 업데이트 후

@@ -8,7 +8,7 @@ type Row<T = any> = T;
 /**
  * 옵션
  */
-interface Options<R = any> {
+interface Options<R = Row> {
   /**
    * 데이터를 표시 할 Row
    */
@@ -71,7 +71,7 @@ interface StyleReturnType extends
     [index: string]: any;
   }
 
-class MyVirtualScroll<R = any> {
+class MyVirtualScroll<R = Row> {
   private options: Options<R>;
   private rows: Row<R>[] = [];
 
@@ -121,10 +121,7 @@ class MyVirtualScroll<R = any> {
 
   // #region etc
   /**
-   * 스크롤 보정 영역
-   *
-   * 세로스크롤: container top - wrapper padding top
-   * 가로스크롤: container left - wrapper padding left
+   * 스크롤 보정 영역 스크롤이 이동되어 있는 상태에서 생성 및 row update 시 좌표 값 계산하기 위해 사용
    */
   private calibrationScroll = 0;
 
@@ -143,7 +140,7 @@ class MyVirtualScroll<R = any> {
   private bindHandleContainerScroll = this.handleContainerScroll.bind(this);
 
   /**
-   * 스크롤 이벤트 발생 시 외부로 내보 낼 cb
+   * 스크롤 이벤트 발생 시 외부로 내보 낼 콜백
    */
   private callback: ScrollCallBack | null = null;
   // #endregion
@@ -396,8 +393,9 @@ class MyVirtualScroll<R = any> {
   // #region Bench
   /**
    * 화면에 표시 할 bench rows (width | height) 합
-   *
-   * @param firstRow
+   * 
+   * @param scroll 현재 스크롤 위치
+   * @param firstRow 첫번째 Row
    */
   private getBeforeBenchSize(scroll: number, firstRow: number): number {
     const [refFirstCoordinate] = this.referenceCoordinates;
@@ -630,7 +628,7 @@ class MyVirtualScroll<R = any> {
   /**
    * 가상스크롤 실행(세로)
    *
-   * @param scrollTop
+   * @param scrollTop 현재 상단 스크롤 위치
    */
   private execVerticalScroll(scrollTop: number): void {
     if (!this.rows.length) return;
@@ -670,6 +668,8 @@ class MyVirtualScroll<R = any> {
 
   /**
    * 가로 스크롤에 따른 가상스크롤 실행
+   * 
+   * @param scrollLeft 현재 가로 스크롤 위치
    */
   private execHorizontalScroll(scrollLeft: number): void {
     if (!this.rows.length) return;
@@ -690,6 +690,8 @@ class MyVirtualScroll<R = any> {
 
   /**
    * 스크롤 이벤트 추가
+   * 
+   * @param cb 이벤트 발생 시 호출 할 콜백함수
    */
   public addContainerScrollEvent(cb: ScrollCallBack): void {
     this.callback = cb;

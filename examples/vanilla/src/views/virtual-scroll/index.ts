@@ -125,7 +125,7 @@ interface CustomNode {
     }, {
       rows: rows,
       direction: 'horizontal',
-      rowSize: 30,
+      rowSize: 50,
     }];
 
     itemTemplate = d.querySelector<HTMLTemplateElement>('#virtual-scroll-item');

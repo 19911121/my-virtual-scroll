@@ -562,43 +562,6 @@ class MyVirtualScroll<R = Row> {
   }
 
   /**
-   * 화면에 표시할 Rows 추가
-   * @param children
-   */
-  public addRenderRows(children: HTMLCollection): void {
-    if ('horizontal' === this.options.direction) {
-      this.rowRects = this.rowRects.concat(
-        Array.from(children).map((v) => {
-          const rect = this.convertDOMRectToScrollRect(v.getBoundingClientRect());
-  
-          return {
-            ...rect,
-            left: (this.wrapperWidth += rect.left),
-            right: (this.wrapperWidth += rect.right),
-          };
-        }),
-      );
-
-      this.execHorizontalScroll(this.refContainer.scrollTop);
-    }
-    else {
-      this.rowRects = this.rowRects.concat(
-        Array.from(children).map((v) => {
-          const rect = this.convertDOMRectToScrollRect(v.getBoundingClientRect());
-  
-          return {
-            ...rect,
-            top: (this.wrapperHeight += rect.top),
-            bottom: (this.wrapperHeight += rect.bottom),
-          };
-        }),
-      );
-
-      this.execVerticalScroll(this.refContainer.scrollTop);
-    }
-  }
-
-  /**
    * rows 정보가 업데이트 될 시 호출
    */
   public updateRows(rows: Row<R>[]): UpdateRowReturnType {

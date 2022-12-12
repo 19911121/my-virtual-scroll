@@ -27,6 +27,8 @@ interface CustomNode {
   let wrappers: HTMLElement[] = [];
   let itemTemplate: HTMLTemplateElement | null = null;
   let myVirtualScrolls: MyVirtualScroll<Row>[] = [];
+
+  itemTemplate = d.querySelector<HTMLTemplateElement>('#virtual-scroll-item');
   
   const render = (index: number, renderRows: Row[]) => {
     const wrapper = wrappers[index];
@@ -40,7 +42,6 @@ interface CustomNode {
 
       for (let i = 0; i < rowCount + 1; i++) {
         const el = children[i];
-        
         const customNode = customNodes[i];
         const row = renderRows[i];
 
@@ -63,11 +64,11 @@ interface CustomNode {
           }
         }
         else {
-          if (customNode || el) {
+          if (el) {
             let j = i;
 
             while (rowCount > j) {
-              children[i]?.remove?.();
+              children[i].remove();
               j++;
             }
   
@@ -128,8 +129,6 @@ interface CustomNode {
       rowSize: 50,
     }];
 
-    itemTemplate = d.querySelector<HTMLTemplateElement>('#virtual-scroll-item');
-
     for (let i = 0; i < containerCount; i++) {
       const container = d.getElementById(`virtual-scroll-container-${i}`);
       const wrapper = d.getElementById(`virtual-scroll-wrapper-${i}`);
@@ -140,38 +139,38 @@ interface CustomNode {
       containers[i] = container;
       wrappers[i] = wrapper;
   
+      // 동적 사이즈 계산일일 경우에는 모든 row를 렌더링
       if (!option.rowSize) render(i, rows);
 
-      if (container && wrapper) {
-        myVirtualScrolls[i] = new MyVirtualScroll(container, wrapper, option);
-        myVirtualScrolls[i].addContainerScrollEvent((e) => {
-          update(i);
-        });
-  
+      myVirtualScrolls[i] = new MyVirtualScroll(container, wrapper, option);
+      myVirtualScrolls[i].addContainerScrollEvent((e) => {
         update(i);
-  
-        setTimeout(() => {
-          console.log('update rows');
-  
-          const newRows: Row[] = [...rows, ...Array.from({ length: 1000 }, (_, i): Row => {
-            return {
-              index: 1000 + i + 1,
-              value: `v${1000 + i}`
-            };
-          })];
+      });
 
-          if (!option.rowSize) {
-            resetStyles(i);
-            render(i, newRows);
-          }
+      // 가상스크롤 생성 후 화면에 보이는 개수만큼 렌더링
+      update(i);
 
-          const updateRow = myVirtualScrolls[i].updateRows(newRows);
+      // 로우 변경 예제
+      setTimeout(() => {
+        console.log('update rows', i);
 
-          updateRow.rendered();
-  
-          update(i);
-        }, 3000);
-      }
+        const newRows: Row[] = [...rows, ...Array.from({ length: 1000 }, (_, i): Row => {
+          return {
+            index: 1000 + i + 1,
+            value: `v${1000 + i}`
+          };
+        })];
+
+        // 동적 사이즈 계산일 경우 스타일 초기화 후 모든 row을 그려준다.
+        if (!option.rowSize) {
+          resetStyles(i);
+          render(i, newRows);
+        }
+
+        myVirtualScrolls[i].updateRows(newRows).rendered();
+
+        update(i);
+      }, 3000);
     }
   });
 })(window, document);

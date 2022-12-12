@@ -88,6 +88,15 @@ interface CustomNode {
     if (!wrappers[index]) return;
 
     const myVirtualScroll = myVirtualScrolls[index];
+    const renderRows = myVirtualScroll.getRenderRows();
+
+    render(index, renderRows);
+  };
+
+  const updateWithStyles = (index: number) => {
+    if (!wrappers[index]) return;
+
+    const myVirtualScroll = myVirtualScrolls[index];
     const wrapper = wrappers[index];
     const styles = myVirtualScroll.getWrapperStyle();
     const renderRows = myVirtualScroll.getRenderRows();
@@ -114,7 +123,7 @@ interface CustomNode {
   };
 
   w.addEventListener('DOMContentLoaded', () => {
-    const containerCount = 4;
+    const containerCount = 6;
     const options: Partial<MyVirtualScrollOptions>[] = [{
       rows: rows,
     }, {
@@ -122,11 +131,19 @@ interface CustomNode {
       rowSize: 21,
     }, {
       rows: rows,
+      rowSize: 21,
+      autoStyles: true,
+    }, {
+      rows: rows,
       direction: 'horizontal'
     }, {
       rows: rows,
       direction: 'horizontal',
       rowSize: 50,
+    }, {
+      rows: rows,
+      direction: 'horizontal',
+      autoStyles: true,
     }];
 
     for (let i = 0; i < containerCount; i++) {
@@ -144,11 +161,13 @@ interface CustomNode {
 
       myVirtualScrolls[i] = new MyVirtualScroll(container, wrapper, option);
       myVirtualScrolls[i].addContainerScrollEvent((e) => {
-        update(i);
+        if (option.autoStyles) update(i);
+        else updateWithStyles(i);
       });
 
       // 가상스크롤 생성 후 화면에 보이는 개수만큼 렌더링
-      update(i);
+      if (option.autoStyles) update(i);
+      else updateWithStyles(i);
 
       // 로우 변경 예제
       setTimeout(() => {
@@ -163,13 +182,15 @@ interface CustomNode {
 
         // 동적 사이즈 계산일 경우 스타일 초기화 후 모든 row을 그려준다.
         if (!option.rowSize) {
-          resetStyles(i);
+          if (!option.autoStyles) resetStyles(i);
+
           render(i, newRows);
         }
 
         myVirtualScrolls[i].updateRows(newRows).rendered();
 
-        update(i);
+        if (option.autoStyles) update(i);
+        else updateWithStyles(i);
       }, 3000);
     }
   });

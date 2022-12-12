@@ -5,42 +5,97 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
-      .virtual-scroll__container {
+      .virtual-scroll {
         overflow: auto;
-        max-width: 300px;
-        max-height: 300px;
+        width: 200px;
+        height: 300px;
       }
 
       .virtual-scroll__wrapper {
         display: inline-block;
       }
 
-      .virtual-scroll__container ul {
+      .virtual-scroll ul {
         margin: 0;
         padding: 0;
       }
 
-      .virtual-scroll__container li {
+      .virtual-scroll li {
         display: block;
+      }
+
+      .virtual-scroll--horizontal {
+        overflow: auto;
+        width: 200px;
+        height: 100px;
+      }
+
+      .virtual-scroll--horizontal ul {
+        white-space: nowrap;
+        /* display: flex;
+        flex-wrap: nowrap; */
+      }
+
+      .virtual-scroll--horizontal li {
+        display: inline-block;
+        width: 50px;
+        border: 1px solid green;
       }
     </style>
   </head>
   <body>
+    <template id="virtual-scroll-item">
+      <li>
+        <span class="{{index}}">
+          {{ value }}
+        </span>
+      </li>
+    </template>
+
     <main>
       <h1>Virtual Scroll</h1>
-      <template id="virtual-scroll-item">
-        <li>
-          <span class="{{rowIndex}}">
-            {{ value }}
-          </span>
-        </li>
-      </template>
+      <div
+        id="virtual-scroll-container-0"
+        class="virtual-scroll"
+      >
+        <ul
+          id="virtual-scroll-wrapper-0"
+          class="virtual-scroll__wrapper"
+        >
+        </ul>
+      </div>
+
+      <h1>Virtual Scroll Fixed</h1>
       <div
         id="virtual-scroll-container-1"
-        class="virtual-scroll__container"
+        class="virtual-scroll"
       >
         <ul
           id="virtual-scroll-wrapper-1"
+          class="virtual-scroll__wrapper"
+        >
+        </ul>
+      </div>
+
+      <h1>Virtual Scroll Horizontal</h1>
+      <div
+        id="virtual-scroll-container-2"
+        class="virtual-scroll virtual-scroll--horizontal"
+      >
+        <ul
+          id="virtual-scroll-wrapper-2"
+          class="virtual-scroll__wrapper"
+        >
+        </ul>
+      </div>
+
+      <h1>Virtual Scroll Horizontal Fixed</h1>
+      <div
+        id="virtual-scroll-container-3"
+        class="virtual-scroll virtual-scroll--horizontal"
+      >
+        <ul
+          id="virtual-scroll-wrapper-3"
           class="virtual-scroll__wrapper"
         >
         </ul>

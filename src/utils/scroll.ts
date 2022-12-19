@@ -1,3 +1,10 @@
+interface Options {
+  /**
+   * 가상 스크롤 사용할 방향
+   */
+  direction: ScrollDirectionValue;
+}
+
 /** 스크롤 사각영역 좌표 */
 type ScrollRect = Pick<DOMRect, 'top' | 'right' | 'bottom' | 'left' | 'width' | 'height' | 'x' | 'y'>;
 
@@ -43,9 +50,20 @@ const convertDOMRectToScrollRect = (domrect: DOMRect) => {
   return rect;
 }
 
+/**
+ * 현재 스크롤 위치 반환
+ * 
+ * @param container 스크롤 타겟 요소
+ * @param direction 방향
+ */
+const getContainerCurrentScroll = (container: HTMLElement, direction: Options['direction']) => {
+  return 'horizontal' === direction ? container.scrollLeft : container.scrollTop;
+};
+
 export {
   ScrollDirection,
-  convertDOMRectToScrollRect
+  getContainerCurrentScroll,
+  convertDOMRectToScrollRect,
 };
 
 export type {
@@ -54,4 +72,5 @@ export type {
   ScrollDirectionKey,
   ScrollDirectionValue,
   ScrollRefCoordinates,
+  Options as ScrollOptions,
 };

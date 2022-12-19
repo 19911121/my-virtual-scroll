@@ -1,21 +1,12 @@
-import { convertDOMRectToScrollRect } from "./scroll";
-import { getWrapperMarginPaddingSum } from "./styles";
 import type { MyVirtualScrollOptions } from "../my-virtual-scroll";
 import type { ScrollRect, ScrollRefCoordinates } from "./scroll";
 
-interface CreateRowRectFunctionOptions {
-  container: ScrollRect;
-  scrollRefCoordinates: ScrollRefCoordinates;
-  size: MyVirtualScrollOptions['rowSize'];
-  /**
-   * 좌표 보정 값
-   * 
-   * row 생성될 때 스크롤이 존재하면 해당 x 및 y 값에서 wrapper 여백을 뺸 값
-   */
-  calibrationValue: number;
-};
-
 interface Options {
+  /**
+   * Row 넓이 or 높이 값
+   */
+  rowSize: number;
+
   /**
    * 위아래 추가로 보여 줄 Row 갯수
    *
@@ -29,18 +20,6 @@ interface Options {
  */
 type Row<T = any> = T;
 
-
-/**
- * bench 반환
- * 
- * @param options 
- */
-const getBench = (options?: Options) => {
-  const bench = options?.bench ?? 0;
-
-  return bench;
-};
-
 /**
  * 고정 사이즈를 가진 row rect 생성
  * 
@@ -50,10 +29,10 @@ const getBench = (options?: Options) => {
  * @param size 
  * @param calibrationValue 
  */
-const createRowRect = <R = Row> (rows: R[], containerRect: ScrollRect, wrapperMarginPaddingSum: number, scrollRefCoordinates: ScrollRefCoordinates, size: MyVirtualScrollOptions['rowSize']): ScrollRect[] => {
-  const r = Array.from(rows).map((v, i) => {
+const createRowRect = (rowCount: number, scrollRefCoordinates: ScrollRefCoordinates, wrapperStartMargin: number, size: MyVirtualScrollOptions['rowSize']): ScrollRect[] => {
+  return Array.from({ length: rowCount }, (v, i) => {
     const [startCoordinateKey, endCoordinateKey] = scrollRefCoordinates;
-    const start = wrapperMarginPaddingSum + (size * i);
+    const start = wrapperStartMargin + (size * i);
 
     return {
       top: 0,
@@ -68,10 +47,6 @@ const createRowRect = <R = Row> (rows: R[], containerRect: ScrollRect, wrapperMa
       [endCoordinateKey]: start + size,
     };
   });
-
-  console.log(r);
-
-  return r;
 };
 
 /**
@@ -79,8 +54,8 @@ const createRowRect = <R = Row> (rows: R[], containerRect: ScrollRect, wrapperMa
  * 
  * @param children 
  */
-const createDynamicRowRect = (children: HTMLCollection, conatinerRect: ScrollRect, scrollRefCoordinates: ScrollRefCoordinates): ScrollRect[] => {
-  const r = Array.from(children).map((v, i) => {
+const createDynamicRowRect = (children: HTMLCollection, conatinerRect: ScrollRect, scrollRefCoordinates: ScrollRefCoordinates, wrapperStartMargin: number): ScrollRect[] => {
+  return Array.from(children).map(v => {
     const [startCoordinateKey, endCoordinateKey] = scrollRefCoordinates;
     const rect = v.getBoundingClientRect();
 
@@ -97,8 +72,6 @@ const createDynamicRowRect = (children: HTMLCollection, conatinerRect: ScrollRec
       [endCoordinateKey]: rect[endCoordinateKey] - conatinerRect[startCoordinateKey],
     };
   });
-
-  return r;
 };
 
 /**
@@ -110,9 +83,11 @@ const createDynamicRowRect = (children: HTMLCollection, conatinerRect: ScrollRec
  * @param scroll 
  * @param calibrationValue 
  */
-const getFirstRow = (rowRects: ScrollRect[], containerRect: ScrollRect, scrollRefCoordinates: ScrollRefCoordinates, scroll: number): number => {
+const getFirstRow = (rowRects: ScrollRect[], scrollRefCoordinates: ScrollRefCoordinates, scroll: number): number => {
   const [, endCoordinateKey] = scrollRefCoordinates;
-  const firstRow = rowRects.findIndex((v, i) => scroll < v[endCoordinateKey]);
+  const firstRow = rowRects.findIndex((v, i) => {
+    return scroll < v[endCoordinateKey];
+  });
 
   return Math.max(0, firstRow);
 }
@@ -122,15 +97,15 @@ const getFirstRow = (rowRects: ScrollRect[], containerRect: ScrollRect, scrollRe
  *
  * @param firstRow 화면에 노출 된 첫번째 Row
  */
-const getFirstBenchRow = (firstRow: number, options?: Options): number => Math.max(0, firstRow - getBench(options));
+const getFirstBenchRow = (firstRow: number, bench: Options['bench'] = 0): number => Math.max(0, firstRow - bench);
 
 /**
  * 화면에 표시 할 before bench rows 반환
  *
  * @param firstRow 화면에 표시 할 첫번쨰 Row
  */
-const getBeforeBenchRows = (rowRects: ScrollRect[], firstRow: number, options?: Options): ScrollRect[] => {
-  return rowRects.slice(getFirstBenchRow(firstRow, options), firstRow);
+const getBeforeBenchRows = (rowRects: ScrollRect[], firstRow: number, bench: Options['bench'] = 0): ScrollRect[] => {
+  return rowRects.slice(getFirstBenchRow(firstRow, bench), firstRow);
 }
 
 /**
@@ -146,7 +121,7 @@ const getBeforeBenchRows = (rowRects: ScrollRect[], firstRow: number, options?: 
 const getLastRow = (rowRects: ScrollRect[], containerRect: ScrollRect, scrollRefCoordinates: ScrollRefCoordinates, scroll: number, fr?: number): number => {
   const [startCoordinateKey, endCoordinateKey] = scrollRefCoordinates;
   const containerSize = containerRect[endCoordinateKey] - containerRect[startCoordinateKey];
-  const firstRow = fr ?? getFirstRow(rowRects, containerRect, scrollRefCoordinates, scroll);
+  const firstRow = fr ?? getFirstRow(rowRects, scrollRefCoordinates, scroll);
   let lastRow = rowRects.slice(firstRow, rowRects.length).findIndex(v => scroll + containerSize <= v[startCoordinateKey]);
 
   lastRow = -1 === lastRow ? rowRects.length : firstRow + lastRow;
@@ -159,7 +134,7 @@ const getLastRow = (rowRects: ScrollRect[], containerRect: ScrollRect, scrollRef
  * 
  * @param lastRow 
  */
-const getLastBenchRow = (lastRow: number, rowCount: number, options?: Options): number => Math.min(rowCount, lastRow + getBench(options));
+const getLastBenchRow = (lastRow: number, rowCount: number, bench: Options['bench'] = 0): number => Math.min(rowCount, lastRow + bench);
 
 /**
  * 화면에 표시 할 bench rows (width | height) 합
@@ -167,10 +142,10 @@ const getLastBenchRow = (lastRow: number, rowCount: number, options?: Options): 
  * @param scroll 현재 스크롤 위치
  * @param firstRow 첫번째 Row
  */
-const getBeforeBenchSize = (rowRects: ScrollRect[], containerRect: ScrollRect, wrapperMarginPaddingSum: number, scrollRefCoordinates: ScrollRefCoordinates, scroll: number, firstRow: number, options?: Options): number => {
+const getBeforeBenchSize = (rowRects: ScrollRect[], wrapperMarginPaddingSum: number, scrollRefCoordinates: ScrollRefCoordinates, scroll: number, firstRow: number, bench: Options['bench'] = 0): number => {
   const [startCoordinateKey] = scrollRefCoordinates;
   const firstRowRect = rowRects[firstRow];
-  const beforeBenchRowsRect = getBeforeBenchRows(rowRects, firstRow, options);
+  const beforeBenchRowsRect = getBeforeBenchRows(rowRects, firstRow, bench);
   const beforeBenchFirstRowRect = beforeBenchRowsRect[0];
 
   /** 첫번쨰 Row 가려진 사이즈 */
@@ -195,4 +170,5 @@ export {
 
 export type {
   Row,
+  Options as RowOptions,
 };

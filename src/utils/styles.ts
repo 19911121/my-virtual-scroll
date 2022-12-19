@@ -83,49 +83,7 @@ const getWrapperStartPadding = (computedStyle: CSSStyleDeclaration, scrollRefCoo
  * @param scrollRefCoordinates 
  * @returns 
  */
-const getWrapperMarginPaddingSum = (computedStyle: CSSStyleDeclaration, scrollRefCoordinates: ScrollRefCoordinates) => getWrapperStartMargin(computedStyle, scrollRefCoordinates) + getWrapperStartPadding(computedStyle, scrollRefCoordinates);
-
-/**
- * wrapper 시작부분 margin 반환
- * 
- * @param containerRect 
- * @param wrapperRect 
- * @param scrollRefCoordinates 
- */
-// const getWrapperStartMargin = (containerRect: ScrollRect, wrapperRect: ScrollRect, scrollRefCoordinates: ScrollRefCoordinates): number => {
-
-  
-//   const [startCoordinateKey] = scrollRefCoordinates;
-
-//   return wrapperRect[startCoordinateKey] - containerRect[startCoordinateKey];
-// };
-
-/**
- * wrapper 시작부분 padding 반환
- * 
- * @param rowRects 
- * @param wrapperRect 
- * @param scrollRefCoordinates 
- * @returns 
- */
-// const getWrapperStartPadding = (rowRects: ScrollRect[], wrapperRect: ScrollRect, scrollRefCoordinates: ScrollRefCoordinates): number => {
-//   const [startCoordinateKey, endCoordinateKey] = scrollRefCoordinates;
-
-//   return rowRects[0][startCoordinateKey] - wrapperRect[startCoordinateKey];
-// };
-
-/**
- * wrapper 마진 패딩 합계
- * 
- * @param rowRects
- * @param containerRect 
- * @param wrapperRect 
- * @param scrollRefCoordinates 
- * @returns 
- */
-// const getWrapperMarginPaddingSum = (rowRects: ScrollRect[], containerRect: ScrollRect, wrapperRect: ScrollRect, scrollRefCoordinates: ScrollRefCoordinates) => {
-//   return getWrapperStartMargin(containerRect, wrapperRect, scrollRefCoordinates) + getWrapperStartPadding(rowRects, wrapperRect, scrollRefCoordinates);
-// };
+const getWrapperStartMarginPaddingSum = (computedStyle: CSSStyleDeclaration, scrollRefCoordinates: ScrollRefCoordinates) => getWrapperStartMargin(computedStyle, scrollRefCoordinates) + getWrapperStartPadding(computedStyle, scrollRefCoordinates);
 
 /**
  * 스타일 속성 키 반환
@@ -188,7 +146,7 @@ const getResetWrapperStyles = (wrapper: HTMLElement, stylePropKey: WrapperStyleP
 export {
   getWrapperStartMargin,
   getWrapperStartPadding,
-  getWrapperMarginPaddingSum,
+  getWrapperStartMarginPaddingSum,
   getRealMarginAccordingToDirection,
   getStylePropKey,
   getWrapperStyle,

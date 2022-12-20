@@ -192,9 +192,7 @@ class MyVirtualScroll<R = Row> {
       ? getResetWrapperStyles(this.refWrapper, getStylePropKey(this.options.direction))
       : getWrapperStyle(this.refWrapper, getStylePropKey(this.options.direction), this.wrapperPosition);
 
-    for (const [k, v] of Object.entries(styles)) {
-      if (Reflect.has(this.refWrapper.style, k)) this.refWrapper.style.setProperty(k, v?.toString() ?? '');
-    }
+    this.refWrapper.style.cssText = Object.entries(styles).map(v => `${v[0]}: ${v[1]}`).join(';');
   };
   // #endregion
 

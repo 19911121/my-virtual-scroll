@@ -1,7 +1,7 @@
 import { ScrollRefCoordinates, getContainerCurrentScroll, convertDOMRectToScrollRect } from "./utils/scroll";
-import { getWrapperStartMargin, getWrapperStartPadding, getWrapperStyle, getStylePropKey, getResetWrapperStyles, getWrapperStartMarginPaddingSum } from "./utils/styles";
+import { getWrapperStartPadding, getWrapperStyle, getStylePropKey, getResetWrapperStyles, getWrapperStartMarginPaddingSum } from "./utils/styles";
 import { createRowRect, createDynamicRowRect, getFirstRow, getLastRow, getFirstBenchRow, getLastBenchRow, getBeforeBenchSize } from "./utils/rows";
-import type { ScrollOptions, ScrollCallBack, ScrollRect, ScrollDirectionValue } from "./utils/scroll";
+import type { ScrollOptions, ScrollCallBack, ScrollRect } from "./utils/scroll";
 import type { StyleReturnType, StyleWrapper } from "./utils/styles";
 import type { Row, RowOptions } from "./utils/rows";
 
@@ -84,9 +84,10 @@ class MyVirtualScroll<R = Row> {
   // #region etc
 
   /**
-   * 스크롤 보정 영역 스크롤이 이동되어 있는 상태에서 생성 및 row update 시 좌표 값 계산하기 위해 사용
+   * 동적 Rows 대한 스크롤 보정 영역
+   * 스크롤이 이동되어 있는 상태에서 생성 및 row update 시 좌표 값 계산하기 위해 사용
    */
-  private calibrationScroll = 0;
+  private calibrationScrollForDynamicRows = 0;
 
   /**
    * 화면에 표시하기 위해 계산 할 좌표 위치 속성 값
@@ -146,9 +147,9 @@ class MyVirtualScroll<R = Row> {
     this.removeContainerEvent();
     this.addContainerEvent();
     this.containerRect = convertDOMRectToScrollRect(this.refContainer.getBoundingClientRect());
-    this.calibrationScroll = 'horizontal' === this.options.direction
-      ? this.wrapperPosition.current - this.refContainer.scrollLeft
-      : this.wrapperPosition.current - this.refContainer.scrollTop;
+    this.calibrationScrollForDynamicRows = 'horizontal' === this.options.direction
+      ? this.refContainer.scrollLeft
+      : this.refContainer.scrollTop;
   }
 
   /**
@@ -205,8 +206,8 @@ class MyVirtualScroll<R = Row> {
     const rowSize = this.options.rowSize;
     const rowCount = this.rows.length;
 
-    this.rowRects = createRowRect(rowCount, this.referenceCoordinates, getWrapperStartMargin(this.wrapperStyles, this.referenceCoordinates), rowSize);
-    this.wrapperPosition.size = rowCount * rowSize;
+    this.rowRects = createRowRect(rowCount, this.referenceCoordinates, getWrapperStartMarginPaddingSum(this.wrapperStyles, this.referenceCoordinates), rowSize);
+    this.wrapperPosition.size = rowCount * rowSize; // + endPadding
 
     this.execScroll(getContainerCurrentScroll(this.refContainer, this.options.direction));
   }
@@ -219,10 +220,10 @@ class MyVirtualScroll<R = Row> {
 
     if (this.rows.length !== wrapperChildren.length) console.warn('렌더링 된 Row 개수와 전체 Row 개수가 일치하지 않아 정상적으로 표시되지 않을 수 있습니다.', `rows length ${this.rows.length}`, `child length ${wrapperChildren.length}`);
     
-    this.rowRects = createDynamicRowRect(wrapperChildren, this.containerRect, this.referenceCoordinates, getWrapperStartMarginPaddingSum(this.wrapperStyles, this.referenceCoordinates));
+    this.rowRects = createDynamicRowRect(wrapperChildren, this.containerRect, this.referenceCoordinates, this.calibrationScrollForDynamicRows);
     this.wrapperPosition.size = 'horizontal' === this.options.direction
-      ? this.refWrapper.offsetWidth
-      : this.refWrapper.offsetHeight;
+      ? this.refWrapper.offsetWidth - getWrapperStartPadding(this.wrapperStyles, this.referenceCoordinates)
+      : this.refWrapper.offsetHeight - getWrapperStartPadding(this.wrapperStyles, this.referenceCoordinates);
 
     this.execScroll(getContainerCurrentScroll(this.refContainer, this.options.direction));
   }
@@ -317,7 +318,7 @@ class MyVirtualScroll<R = Row> {
 
     const [refFirstCoordinate] = this.referenceCoordinates;
     const rect = this.rowRects[row];
-    const scroll = rect[refFirstCoordinate] - this.containerRect[refFirstCoordinate] + this.calibrationScroll;
+    const scroll = rect[refFirstCoordinate];
 
     if ('horizontal' === this.options.direction) this.refContainer.scrollTo(scroll, this.refContainer.scrollTop);
     else this.refContainer.scrollTo(this.refContainer.scrollLeft, scroll);
@@ -329,20 +330,19 @@ class MyVirtualScroll<R = Row> {
    * @param scroll
    */
   private execScroll(scroll: number): void {
-    // 동적 생성인 경우에는 마진 값만 제외
-    const wrapperStartMargin = this.options.rowSize ? getWrapperStartMarginPaddingSum(this.wrapperStyles, this.referenceCoordinates) : getWrapperStartMarginPaddingSum(this.wrapperStyles, this.referenceCoordinates);
+    const wrapperStartMarginPaddingSum = getWrapperStartMarginPaddingSum(this.wrapperStyles, this.referenceCoordinates);
     const firstRow = getFirstRow(this.rowRects, this.referenceCoordinates, scroll);
     const firstBenchRow = getFirstBenchRow(firstRow, this.options.bench);
     const lastRow = getLastRow(this.rowRects, this.containerRect, this.referenceCoordinates, scroll, firstRow);
     const lastBenchRow = getLastBenchRow(lastRow, this.rowRects.length, this.options.bench);
-    const beforeRowsSize = getBeforeBenchSize(this.rowRects, wrapperStartMargin, this.referenceCoordinates, scroll, firstRow, this.options.bench);
+    const beforeRowsSize = getBeforeBenchSize(this.rowRects, wrapperStartMarginPaddingSum, this.referenceCoordinates, scroll, firstRow, this.options.bench);
 
     this.renderFirstRow = firstBenchRow;
     this.renderLastRow = lastBenchRow;
     this.renderRows = this.rows.slice(firstBenchRow, lastBenchRow);
-    this.wrapperPosition.current = wrapperStartMargin > scroll
+    this.wrapperPosition.current = wrapperStartMarginPaddingSum >= scroll
       ? 0
-      : scroll - beforeRowsSize - (wrapperStartMargin);
+      : scroll - beforeRowsSize - wrapperStartMarginPaddingSum;
 
     this.updateWrapperStyles();
   }

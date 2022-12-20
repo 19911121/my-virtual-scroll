@@ -54,7 +54,7 @@ const createRowRect = (rowCount: number, scrollRefCoordinates: ScrollRefCoordina
  * 
  * @param children 
  */
-const createDynamicRowRect = (children: HTMLCollection, conatinerRect: ScrollRect, scrollRefCoordinates: ScrollRefCoordinates, wrapperStartMargin: number): ScrollRect[] => {
+const createDynamicRowRect = (children: HTMLCollection, conatinerRect: ScrollRect, scrollRefCoordinates: ScrollRefCoordinates, calibrationScroll: number): ScrollRect[] => {
   return Array.from(children).map(v => {
     const [startCoordinateKey, endCoordinateKey] = scrollRefCoordinates;
     const rect = v.getBoundingClientRect();
@@ -68,8 +68,8 @@ const createDynamicRowRect = (children: HTMLCollection, conatinerRect: ScrollRec
       height: 0,
       x: 0,
       y: 0,
-      [startCoordinateKey]: rect[startCoordinateKey] - conatinerRect[startCoordinateKey],
-      [endCoordinateKey]: rect[endCoordinateKey] - conatinerRect[startCoordinateKey],
+      [startCoordinateKey]: rect[startCoordinateKey] - conatinerRect[startCoordinateKey] + calibrationScroll,
+      [endCoordinateKey]: rect[endCoordinateKey] - conatinerRect[startCoordinateKey] + calibrationScroll,
     };
   });
 };

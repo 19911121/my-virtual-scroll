@@ -47,16 +47,27 @@ interface StyleWrapper {
    *  horizontal => x
    *  vertical => y
    */
-  current : number;
+  current: number;
 }
 
 /**
- * 
+ * 마진 시작 속성명 반환
  * 
  * @param scrollRefCoordinates 
  */
 const getStartMarginName = (scrollRefCoordinates: ScrollRefCoordinates): Capitalize<ScrollRefCoordinates[0]> => {
   const name = scrollRefCoordinates[0];
+
+  return name[0].toUpperCase() + name.slice(1) as Capitalize<ScrollRefCoordinates[0]>;
+};
+
+/**
+ * 마진 종료 속성명 반환
+ * 
+ * @param scrollRefCoordinates 
+ */
+const getEndMarginName = (scrollRefCoordinates: ScrollRefCoordinates): Capitalize<ScrollRefCoordinates[0]> => {
+  const name = scrollRefCoordinates[1];
 
   return name[0].toUpperCase() + name.slice(1) as Capitalize<ScrollRefCoordinates[0]>;
 };
@@ -70,12 +81,28 @@ const getStartMarginName = (scrollRefCoordinates: ScrollRefCoordinates): Capital
 const getWrapperStartMargin = (computedStyle: CSSStyleDeclaration, scrollRefCoordinates: ScrollRefCoordinates): number => Number.parseFloat(computedStyle[`margin${getStartMarginName(scrollRefCoordinates)}`]);
 
 /**
+ * 방향에 따른 wrapper 종료 마진
+ * 
+ * @param computedStyle 
+ * @param scrollRefCoordinates 
+ */
+const getWrapperEndMargin = (computedStyle: CSSStyleDeclaration, scrollRefCoordinates: ScrollRefCoordinates): number => Number.parseFloat(computedStyle[`margin${getEndMarginName(scrollRefCoordinates)}`]);
+
+/**
  * 방향에 따른 wrapper 시작 패딩
  * @param computedStyle 
  * @param scrollRefCoordinates 
  * @returns 
  */
 const getWrapperStartPadding = (computedStyle: CSSStyleDeclaration, scrollRefCoordinates: ScrollRefCoordinates): number => Number.parseFloat(computedStyle[`padding${getStartMarginName(scrollRefCoordinates)}`]);
+
+/**
+ * 방향에 따른 wrapper 종료 패딩
+ * @param computedStyle 
+ * @param scrollRefCoordinates 
+ * @returns 
+ */
+const getWrapperEndPadding = (computedStyle: CSSStyleDeclaration, scrollRefCoordinates: ScrollRefCoordinates): number => Number.parseFloat(computedStyle[`padding${getEndMarginName(scrollRefCoordinates)}`]);
 
 /**
  * 방향에 따른 wrapper 시작 마진과 패딩의 합
@@ -116,8 +143,8 @@ const getWrapperStyle = (wrapper: HTMLElement, stylePropKey: WrapperStylePropKey
   const styles: StyleReturnType = {};
 
   styles.transform = transform
-      ? wrapper.style.transform.replace(regex, transformFunction)
-      : transformFunction;
+    ? wrapper.style.transform.replace(regex, transformFunction)
+    : transformFunction;
   styles[stylePropKey.size] = `${styleWrapper.size - styleWrapper.current}px`;
 
   return styles;
@@ -145,6 +172,7 @@ const getResetWrapperStyles = (wrapper: HTMLElement, stylePropKey: WrapperStyleP
 
 export {
   getWrapperStartMargin,
+  getWrapperEndMargin,
   getWrapperStartPadding,
   getWrapperStartMarginPaddingSum,
   getRealMarginAccordingToDirection,

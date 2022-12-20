@@ -19,7 +19,6 @@ type ScrollCallBack = (e: Event) => void;
  * 와 같이 사용함
  */
 type ScrollRefCoordinates = ['left', 'right'] | ['top', 'bottom'];
-// type ScrollRefCoordinates = 'top' | 'right' | 'bottom' | 'left';
 
 /** 스크롤 진행 방향 */
 const ScrollDirection = {

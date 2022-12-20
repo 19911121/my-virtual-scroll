@@ -102,7 +102,7 @@ const props = {
 
   bench: {
     type: Number as PropType<Props['bench']>,
-    default: 5,
+    default: 0,
     required: false,
   },
 
@@ -130,19 +130,21 @@ export default function virtualScrollComposable(emit: CustomEmit<Emits>, props: 
   const refWrapper = ref<HTMLElement>();
 
   // #region container
+  const updateRows = () => {
+    if (!myVirtualScroll) return;
+    if (!props.autoStyles) updateWrapperStyle();
+
+    renderRows.value = myVirtualScroll.getRenderRows();
+    firstRenderRow.value = myVirtualScroll.getRenderFirstRow();
+  }; 
+
   /**
    * 1. container 스크롤 이벤트 발생 시 호출
    * 
    * @param e 
    */
   const handleContainerScroll = (e: Event) => {
-    if (!myVirtualScroll) return;
-
-    renderRows.value = myVirtualScroll.getRenderRows();
-
-    if (!props.autoStyles) updateWrapperStyle();
-
-    firstRenderRow.value = myVirtualScroll.getRenderFirstRow();
+    updateRows();
 
     emit('container-scroll', e);
   };
@@ -203,13 +205,9 @@ export default function virtualScrollComposable(emit: CustomEmit<Emits>, props: 
           autoStyles: props.autoStyles,
         });
         myVirtualScroll.addContainerScrollEvent(handleContainerScroll);
-
-        renderRows.value = myVirtualScroll.getRenderRows();
-        firstRenderRow.value = myVirtualScroll.getRenderFirstRow();
       }
 
-      if (!props.autoStyles) updateWrapperStyle();
-
+      updateRows();
       emit('updated');
     }, {
       immediate: true,

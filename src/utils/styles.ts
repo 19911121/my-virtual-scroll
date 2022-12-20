@@ -137,10 +137,15 @@ const getStylePropKey = (direction: ScrollDirectionValue): WrapperStylePropKey =
  * @returns 
  */
 const getWrapperStyle = (wrapper: HTMLElement, stylePropKey: WrapperStylePropKey, styleWrapper: StyleWrapper): StyleReturnType => {
+  const wrapperStyles = wrapper.style;
   const transform = wrapper.style.transform;
   const transformFunction = `${stylePropKey.transformFunctionName}(${styleWrapper.current}px)`;
   const regex = new RegExp(`${stylePropKey.transformFunctionName}(.+)`);
   const styles: StyleReturnType = {};
+
+  for (const [k, v] of Object.entries(wrapperStyles)) {
+    styles[k] = v;
+  }
 
   styles.transform = transform
     ? wrapper.style.transform.replace(regex, transformFunction)

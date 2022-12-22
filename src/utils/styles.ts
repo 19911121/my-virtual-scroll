@@ -185,6 +185,23 @@ const wrapperStartOrEndStyleValue = (computedStyle: CSSStyleDeclaration, prop: S
 };
 
 /**
+ * 적용 된 inline 스타일 반환
+ * 
+ * @param wrapper 
+ */
+const getAppliedInlineStyles = (wrapper: HTMLElement) => {
+  const wrapperStylesText = wrapper.style.cssText;
+
+  return wrapperStylesText
+    ? Object.fromEntries(wrapperStylesText.split(';').slice(0, -1).map(v => {
+      const [key, value] = v.split(':');
+
+      return [key, value.trim()]
+    }))
+    : {};
+};
+
+/**
  * wrapper 적용 할 스타일 반환
  * 
  * @param wrapper 스크롤 wrapper
@@ -192,7 +209,7 @@ const wrapperStartOrEndStyleValue = (computedStyle: CSSStyleDeclaration, prop: S
  * @param styleWrapper {@link StyleWrapper} 
  */
 const getWrapperStyle = (wrapper: HTMLElement, styleProp: WrapperStyleProp, styleWrapper: StyleWrapper): StyleReturnType => {
-  const wrapperStyles = wrapper.style;
+  const wrapperStyles = getAppliedInlineStyles(wrapper);
   const transform = wrapper.style.transform;
   const transformFunction = `${styleProp.transformFunctionName}(${(styleWrapper.current)}px)`;
   const regex = new RegExp(`${styleProp.transformFunctionName}(.+)`);

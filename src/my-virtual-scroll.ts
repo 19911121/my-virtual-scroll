@@ -39,14 +39,14 @@ class MyVirtualScroll<R = Row> {
 
   /** continaer 영역 좌표 */
   private containerRect!: ScrollRect;
+
+  /** 영역 사이즈 계산을 위한 Element */
+  private sizeAreaElement: HTMLElement | null = null;
   // #endregion
 
   // #region wrapper (body, contents 영역)
   /** 가상스크롤을 적용 할 wrapper (body, contents 영역) */
   private refWrapper: HTMLElement;
-
-  /** 영역 사이즈 계산을 위한 Element */
-  private wrapperSizeElement: HTMLElement | null = null;
 
   /** wrapper styles */
   private wrapperStyles!: CSSStyleDeclaration;
@@ -221,13 +221,13 @@ class MyVirtualScroll<R = Row> {
     if (this.options.rowSize) this.initRenderRows();
     else this.initDynamicRenderRows();
 
-    this.initOptimize();
+    this.initSizeArea();
   }
 
   /**
-   * 최적화 모드 사용
+   * 사이즈 영역 초기화
    */
-  private initOptimize() {
+  private initSizeArea() {
     const ws = wrapperStyles(this.wrapperStyles, this.referenceCoordinates);
     const emptySize = this.wrapperPosition.size + ws.getEmptySizeSum('margin') + ws.getEmptySizeSum('padding') + ws.getPairEmptySizeSum('border', 'width');
     const styles = `
@@ -236,19 +236,19 @@ class MyVirtualScroll<R = Row> {
       ${ScrollDirection.Horizontal === this.options.direction ? 'height' : 'width'}: 0.1px;
     `.trim();
 
-    if (this.wrapperSizeElement) {
-      this.wrapperSizeElement.style.cssText = styles;
+    if (this.sizeAreaElement) {
+      this.sizeAreaElement.style.cssText = styles;
     }
     else {
-      const wrapperSizeElement = document.createElement('div');
+      const sizeAreaElement = document.createElement('div');
   
-      wrapperSizeElement.className = `${this.constructor.name.replace(/(?!^)([A-Z])/g, "-$1").toLowerCase()}-height`;
-      wrapperSizeElement.style.cssText = styles;
+      sizeAreaElement.className = `${this.constructor.name.replace(/(?!^)([A-Z])/g, "-$1").toLowerCase()}-height`;
+      sizeAreaElement.style.cssText = styles;
   
-      this.wrapperSizeElement = wrapperSizeElement;
+      this.sizeAreaElement = sizeAreaElement;
     }
 
-    this.refWrapper.insertAdjacentElement('beforebegin', this.wrapperSizeElement);
+    this.refContainer.insertAdjacentElement('afterbegin', this.sizeAreaElement);
   }
 
   /**
@@ -303,7 +303,7 @@ class MyVirtualScroll<R = Row> {
        */
       rendered: () => {
         // 동적 렌더링인 경우 스타일 초기화
-        if (!this.options.rowSize) this.updateWrapperStyles(true);
+        // if (!this.options.rowSize) this.updateWrapperStyles(true);
 
         this.init();
       },

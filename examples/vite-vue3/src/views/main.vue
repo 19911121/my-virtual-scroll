@@ -1,14 +1,31 @@
 <template>
-  <main>
+  <main>   
     <h1>
       Virtual Scroll
     </h1>
 
     <virtual-scroll
-      class="virtual-scroll__conatiner"
+      class="virtual-scroll__container"
       unique-key="index"
       :rows="rows"
-      :bench="3"
+    >
+      <template #default="{ row, rowIndex }">
+        <span>
+          <em class="row">{{ rowIndex }}</em>
+          {{ row.value }}
+        </span>
+      </template>
+    </virtual-scroll>
+
+    <h1>
+      Virtual Scroll Auto Styles
+    </h1>
+
+    <virtual-scroll
+      class="virtual-scroll__container"
+      unique-key="index"
+      :rows="rows"
+      auto-styles
     >
       <template #default="{ row, rowIndex }">
         <span>
@@ -22,9 +39,9 @@
       Virtual Scroll Fixed Size
     </h1>
     <virtual-scroll
-      class="virtual-scroll__conatiner"
+      class="virtual-scroll__container"
       unique-key="index"
-      :row-size="18"
+      :row-size="20"
       :rows="rows"
       :bench="3"
     >
@@ -37,33 +54,30 @@
     </virtual-scroll>
 
     <h1>
-      Virtual Scroll Table
+      Virtual Scroll Fixed Size Auto Styles
     </h1>
-
-    <virtual-scroll-table
-      class="virtual-scroll__conatiner"
+    <virtual-scroll
+      class="virtual-scroll__container"
       unique-key="index"
+      :row-size="20"
       :rows="rows"
-      :bench="1"
+      :bench="3"
+      auto-styles
     >
       <template #default="{ row, rowIndex }">
-        <tr>
-          <td class="row">
-            {{ rowIndex }}
-          </td>
-          <td class="value">
-            {{ row.value }}
-          </td>
-        </tr>
+        <span>
+          <em class="row">{{ rowIndex }}</em>
+          {{ row.value }}
+        </span>
       </template>
-    </virtual-scroll-table>
+    </virtual-scroll>
 
     <h1>
       Horizontal Scroll
     </h1>
 
     <virtual-scroll
-      class="virtual-scroll__conatiner virtual-scroll__conatiner--horizontal"
+      class="virtual-scroll__container virtual-scroll__container--horizontal"
       unique-key="index"
       direction="horizontal"
       :rows="rows"
@@ -83,7 +97,7 @@
     </h1>
 
     <virtual-scroll
-      class="virtual-scroll__conatiner virtual-scroll__conatiner--horizontal"
+      class="virtual-scroll__container virtual-scroll__container--horizontal"
       unique-key="index"
       direction="horizontal"
       :rows="rows"
@@ -98,6 +112,28 @@
         </span>
       </template>
     </virtual-scroll>
+
+    <h1>
+      Virtual Scroll Table
+    </h1>
+
+    <virtual-scroll-table
+      class="virtual-scroll__container"
+      unique-key="index"
+      :rows="rows"
+      :bench="1"
+    >
+      <template #default="{ row, rowIndex }">
+        <tr>
+          <td class="row">
+            {{ rowIndex }}
+          </td>
+          <td class="value">
+            {{ row.value }}
+          </td>
+        </tr>
+      </template>
+    </virtual-scroll-table>
   </main>
 </template>
 <script setup lang="ts">
@@ -133,8 +169,6 @@
     await nextTick();
 
     setTimeout(() => {
-      console.log('add rows!');
-
       const newRows: Row[] = Array.from({ length: 1000 }, (_, i): Row => {
         return {
           index: 1000 + i + 1,
@@ -143,13 +177,16 @@
       });
 
       rows.value = rows.value.concat(newRows);
+
+      console.log('update row');
     }, 3000);
   });
 </script>
 
 <style lang="scss" scoped>
   .virtual-scroll {
-    &__conatiner {
+    &__container {
+      position: relative;
       display: block;
       overflow: auto;
       width: 500px;
@@ -160,6 +197,19 @@
         .row {
           display: inline-block;
           width: 100px;
+        }
+
+        ul {
+          // margin-top: 50px;
+          // margin-bottom: 50px;
+          // padding-top: 10px;
+          // padding-bottom: 10px;
+          margin: 0;
+          border: 1px solid green;
+
+          li {
+            height: 20px;
+          }
         }
       }
 

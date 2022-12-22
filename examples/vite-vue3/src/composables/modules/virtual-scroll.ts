@@ -152,14 +152,6 @@ export default function virtualScrollComposable(emit: CustomEmit<Emits>, props: 
 
   // #region wrapper
   const wrapperStyle = ref<Record<string, any>>();
-  const resetWrapperStyles = () => {
-    if (!myVirtualScroll) return;
-    if ('string' === typeof props.wrapperStyle) return;
-    
-    wrapperStyle.value = {
-      ...props.wrapperStyle,
-    };
-  };
 
   const updateWrapperStyle = () => {
     if (!myVirtualScroll) return;
@@ -190,9 +182,6 @@ export default function virtualScrollComposable(emit: CustomEmit<Emits>, props: 
       if (myVirtualScroll) {
         const vs = myVirtualScroll.updateRows(newValue);
 
-        // 동적 렌더링인 경우 스타일 초기화 후
-        if (!props.rowSize) resetWrapperStyles();
-
         await nextTick();
         vs.rendered();
       }
@@ -220,7 +209,6 @@ export default function virtualScrollComposable(emit: CustomEmit<Emits>, props: 
   });
 
   return {
-    resetWrapperStyles,
     refContainer,
     renderRows,
     refWrapper,

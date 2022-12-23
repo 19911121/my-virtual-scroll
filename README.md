@@ -91,13 +91,13 @@ const rendered = myVirtualScroll.updateRows();
 rendered();
 ```
 
-### `moveVerticalScrollToRow`
+### `moveScrollToRow`
 
 Row에 해당하는 위치로 스크롤을 이동시킵니다.
 
 ``` typescript
 // 100번째 Row로 스크롤 이동
-myVirtualScroll.moveVerticalScrollToRow(100);
+myVirtualScroll.moveScrollToRow(100);
 ```
 
 ## 옵션

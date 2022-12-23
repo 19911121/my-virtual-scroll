@@ -12,12 +12,12 @@ interface StyleWrapper {
     size: number;
     current: number;
 }
-declare type SizeDirection = Capitalize<'top' | 'right' | 'bottom' | 'left'>;
-declare type SizeSingleStartName<K extends keyof CSSStyleDeclaration = keyof CSSStyleDeclaration> = K extends `${infer S}${SizeDirection}` ? S : never;
-declare type SizePairNameGroup = ['border_width'];
-declare type SizePairNameSplit<G extends SizePairNameGroup[number] = SizePairNameGroup[number]> = G extends `${infer S}_${infer E}` ? [S, E] : never;
-declare type SizePairStartName<K extends keyof CSSStyleDeclaration = keyof CSSStyleDeclaration> = K extends `${infer S}${SizeDirection}${Capitalize<SizePairNameSplit[1]>}` ? S : never;
-declare type SizePairEndName<S extends SizePairStartName, K extends keyof CSSStyleDeclaration = keyof CSSStyleDeclaration> = K extends `${S}${SizeDirection}${infer E}` ? E extends Capitalize<SizePairNameSplit[1]> ? Uncapitalize<E> : never : never;
+type SizeDirection = Capitalize<'top' | 'right' | 'bottom' | 'left'>;
+type SizeSingleStartName<K extends keyof CSSStyleDeclaration = keyof CSSStyleDeclaration> = K extends `${infer S}${SizeDirection}` ? S : never;
+type SizePairNameGroup = ['border_width'];
+type SizePairNameSplit<G extends SizePairNameGroup[number] = SizePairNameGroup[number]> = G extends `${infer S}_${infer E}` ? [S, E] : never;
+type SizePairStartName<K extends keyof CSSStyleDeclaration = keyof CSSStyleDeclaration> = K extends `${infer S}${SizeDirection}${Capitalize<SizePairNameSplit[1]>}` ? S : never;
+type SizePairEndName<S extends SizePairStartName, K extends keyof CSSStyleDeclaration = keyof CSSStyleDeclaration> = K extends `${S}${SizeDirection}${infer E}` ? E extends Capitalize<SizePairNameSplit[1]> ? Uncapitalize<E> : never : never;
 declare const getStartDirectionName: (scrollRefCoordinates: ScrollRefCoordinates) => Capitalize<ScrollRefCoordinates[0]>;
 declare const getStyleProp: (direction: ScrollDirectionValue) => WrapperStyleProp;
 declare const getWrapperStyle: (wrapper: HTMLElement, styleProp: WrapperStyleProp, styleWrapper: StyleWrapper) => StyleReturnType;

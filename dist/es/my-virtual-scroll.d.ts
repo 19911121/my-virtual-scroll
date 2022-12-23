@@ -6,7 +6,7 @@ interface Options<R = Row> extends RowOptions, ScrollOptions {
     autoStyles: boolean;
     rowHeight: number;
 }
-declare type UpdateRowReturnType = {
+type UpdateRowReturnType = {
     rendered: () => void;
 };
 declare class MyVirtualScroll<R = Row> {

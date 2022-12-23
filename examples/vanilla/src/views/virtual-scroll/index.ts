@@ -103,9 +103,7 @@ interface CustomNode {
 
     render(index, renderRows);
 
-    for (const [k, v] of Object.entries(styles)) {
-      if (Reflect.has(wrapper.style, k)) wrapper.style.setProperty(k, v?.toString() ?? '');
-    }
+    wrapper.style.cssText = Object.entries(styles).map(v => `${v[0]}: ${v[1]}`).join(';');
   };
 
   /**
@@ -117,15 +115,18 @@ interface CustomNode {
     const myVirtualScroll = myVirtualScrolls[index];
     const styles = myVirtualScroll.getWrapperStyle();
 
-    for (const [k, v] of Object.entries(styles)) {
-      if (Reflect.has(wrappers[index].style, k)) wrappers[index].style.removeProperty(k);
-    }
+    wrappers[index].style.cssText = Object.entries(styles).map(v => `${v[0]}: ${v[1]}`).join(';');
   };
 
   w.addEventListener('DOMContentLoaded', () => {
-    const containerCount = 6;
+    const containerCount = 8;
     const options: Partial<MyVirtualScrollOptions>[] = [{
       rows: rows,
+      bench: 0,
+    }, {
+      rows: rows,
+      bench: 0,
+      autoStyles: true,
     }, {
       rows: rows,
       rowSize: 21,
@@ -139,10 +140,15 @@ interface CustomNode {
     }, {
       rows: rows,
       direction: 'horizontal',
+      autoStyles: true,
+    }, {
+      rows: rows,
+      direction: 'horizontal',
       rowSize: 50,
     }, {
       rows: rows,
       direction: 'horizontal',
+      rowSize: 50,
       autoStyles: true,
     }];
 
@@ -170,6 +176,7 @@ interface CustomNode {
       else updateWithStyles(i);
 
       // 로우 변경 예제
+
       setTimeout(() => {
         console.log('update rows', i);
 

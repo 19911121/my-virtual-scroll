@@ -1,19 +1,185 @@
+const ScrollDirection = {
+    Horizontal: 'horizontal',
+    Vertical: 'vertical'
+};
+const convertDOMRectToScrollRect = (domrect) => {
+    const rect = {
+        top: domrect.top,
+        right: domrect.right,
+        bottom: domrect.bottom,
+        left: domrect.left,
+        width: domrect.width,
+        height: domrect.height,
+        x: domrect.x,
+        y: domrect.y,
+    };
+    return rect;
+};
+const getContainerCurrentScroll = (container, direction) => {
+    return 'horizontal' === direction ? container.scrollLeft : container.scrollTop;
+};
+
+const toCapitalize = (name) => {
+    return name[0].toUpperCase() + name.slice(1);
+};
+const getStartDirectionName = (scrollRefCoordinates) => {
+    const name = scrollRefCoordinates[0];
+    return name[0].toUpperCase() + name.slice(1);
+};
+const getEndDirectionName = (scrollRefCoordinates) => {
+    const name = scrollRefCoordinates[1];
+    return toCapitalize(name);
+};
+const getStyleProp = (direction) => {
+    return ScrollDirection.Horizontal === direction ? {
+        transformFunctionName: 'translateX',
+        size: 'width'
+    } : {
+        transformFunctionName: 'translateY',
+        size: 'height'
+    };
+};
+const wrapperStartOrEndStyleValue = (computedStyle, prop) => {
+    const value = computedStyle[prop];
+    return {
+        value: () => value,
+        number: () => value ? Number.parseFloat(value.toString()) : NaN,
+    };
+};
+const getAppliedInlineStyles = (wrapper) => {
+    const wrapperStylesText = wrapper.style.cssText;
+    return wrapperStylesText
+        ? Object.fromEntries(wrapperStylesText.split(';').slice(0, -1).map(v => {
+            const [key, value] = v.split(':');
+            return [key, value.trim()];
+        }))
+        : {};
+};
+const getWrapperStyle = (wrapper, styleProp, styleWrapper) => {
+    const wrapperStyles = getAppliedInlineStyles(wrapper);
+    const transform = wrapper.style.transform;
+    const transformFunction = `${styleProp.transformFunctionName}(${(styleWrapper.current)}px)`;
+    const regex = new RegExp(`${styleProp.transformFunctionName}(.+)`);
+    const styles = {};
+    for (const [k, v] of Object.entries(wrapperStyles)) {
+        styles[k] = v;
+    }
+    styles.transform = transform
+        ? wrapper.style.transform.replace(regex, transformFunction)
+        : transformFunction;
+    return styles;
+};
+const getResetWrapperStyles = (wrapper, styleProp) => {
+    const transform = wrapper.style.transform;
+    const transformFunction = `${styleProp.transformFunctionName}(0px)`;
+    const regex = new RegExp(`${styleProp.transformFunctionName}(.+)`);
+    const styles = {};
+    styles.transform = transform
+        ? wrapper.style.transform.replace(regex, transformFunction)
+        : transformFunction;
+    return styles;
+};
+const getWrapperSingleNameStartEmptySize = (args) => wrapperStartOrEndStyleValue(args[0], `${args[2]}${getStartDirectionName(args[1])}`).number();
+const getWrapperSingleNameEndEmptySize = (args) => wrapperStartOrEndStyleValue(args[0], `${args[2]}${getEndDirectionName(args[1])}`).number();
+const getWrapperPairNameStartEmptySize = (args) => wrapperStartOrEndStyleValue(args[0], `${args[2]}${getStartDirectionName(args[1])}${toCapitalize(args[3])}`).number();
+const getWrapperPairNameEndEmptySize = (args) => wrapperStartOrEndStyleValue(args[0], `${args[2]}${getEndDirectionName(args[1])}${toCapitalize(args[3])}`).number();
+const wrapperStyles = (computedStyle, scrollRefCoordinates) => {
+    const args = [computedStyle, scrollRefCoordinates];
+    return {
+        getStartEmptySize: (name) => getWrapperSingleNameStartEmptySize([...args, name]),
+        getEndEmptySize: (name) => getWrapperSingleNameEndEmptySize([...args, name]),
+        getEmptySizeSum: (name) => getWrapperSingleNameStartEmptySize([...args, name]) + getWrapperSingleNameEndEmptySize([...args, name]),
+        getPairStartEmptySize: (startName, endName) => getWrapperPairNameStartEmptySize([...args, startName, endName]),
+        getPairEndEmptySize: (startName, endName) => getWrapperPairNameEndEmptySize([...args, startName, endName]),
+        getPairEmptySizeSum: (startName, endName) => getWrapperPairNameStartEmptySize([...args, startName, endName]) + getWrapperPairNameEndEmptySize([...args, startName, endName]),
+    };
+};
+
+const createRowRect = (rowCount, scrollRefCoordinates, wrapperStartEmptySize, size) => {
+    return Array.from({ length: rowCount }, (v, i) => {
+        const [startCoordinateKey, endCoordinateKey] = scrollRefCoordinates;
+        const start = wrapperStartEmptySize + (size * i);
+        return {
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            width: 0,
+            height: 0,
+            x: 0,
+            y: 0,
+            [startCoordinateKey]: start,
+            [endCoordinateKey]: start + size,
+        };
+    });
+};
+const createDynamicRowRect = (children, conatinerRect, scrollRefCoordinates, calibrationScroll) => {
+    return Array.from(children).map(v => {
+        const [startCoordinateKey, endCoordinateKey] = scrollRefCoordinates;
+        const rect = v.getBoundingClientRect();
+        return {
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            width: 0,
+            height: 0,
+            x: 0,
+            y: 0,
+            [startCoordinateKey]: rect[startCoordinateKey] - conatinerRect[startCoordinateKey] + calibrationScroll,
+            [endCoordinateKey]: rect[endCoordinateKey] - conatinerRect[startCoordinateKey] + calibrationScroll,
+        };
+    });
+};
+const getFirstRow = (rowRects, scrollRefCoordinates, scroll) => {
+    const [, endCoordinateKey] = scrollRefCoordinates;
+    const firstRow = rowRects.findIndex((v, i) => {
+        return scroll < v[endCoordinateKey];
+    });
+    return Math.max(0, firstRow);
+};
+const getFirstBenchRow = (firstRow, bench = 0) => Math.max(0, firstRow - bench);
+const getBeforeBenchRows = (rowRects, firstRow, bench = 0) => {
+    return rowRects.slice(getFirstBenchRow(firstRow, bench), firstRow);
+};
+const getLastRow = (rowRects, containerRect, scrollRefCoordinates, scroll, fr) => {
+    const [startCoordinateKey, endCoordinateKey] = scrollRefCoordinates;
+    const containerSize = containerRect[endCoordinateKey] - containerRect[startCoordinateKey];
+    const firstRow = fr ?? getFirstRow(rowRects, scrollRefCoordinates, scroll);
+    let lastRow = rowRects.slice(firstRow, rowRects.length).findIndex(v => scroll + containerSize <= v[startCoordinateKey]);
+    lastRow = -1 === lastRow ? rowRects.length : firstRow + lastRow;
+    return Math.min(rowRects.length, lastRow);
+};
+const getLastBenchRow = (lastRow, rowCount, bench = 0) => Math.min(rowCount, lastRow + bench);
+const getBeforeBenchSize = (rowRects, wrapperStartEmptySize, scrollRefCoordinates, scroll, firstRow, bench = 0) => {
+    const [startCoordinateKey] = scrollRefCoordinates;
+    const firstRowRect = rowRects[firstRow];
+    const beforeBenchRowsRect = getBeforeBenchRows(rowRects, firstRow, bench);
+    const beforeBenchFirstRowRect = beforeBenchRowsRect[0];
+    const firstRowHideSize = scroll > wrapperStartEmptySize
+        ? scroll - firstRowRect[startCoordinateKey]
+        : 0;
+    return beforeBenchRowsRect.length
+        ? firstRowHideSize + firstRowRect[startCoordinateKey] - beforeBenchFirstRowRect[startCoordinateKey]
+        : firstRowHideSize;
+};
+
 class MyVirtualScroll {
-    options;
     rows = [];
+    options;
     refContainer;
     containerRect;
+    sizeAreaElement = null;
     refWrapper;
     wrapperStyles;
-    wrapperWidth = 0;
-    wrapperMarginLeft = 0;
-    wrapperHeight = 0;
-    wrapperMarginTop = 0;
+    wrapperPosition = {
+        current: 0,
+        size: 0,
+    };
     renderRows = [];
     renderFirstRow = 0;
     renderLastRow = 0;
     rowRects = [];
-    calibrationScroll = 0;
     referenceCoordinates;
     bindHandleContainerScroll = this.handleContainerScroll.bind(this);
     callback = null;
@@ -41,38 +207,15 @@ class MyVirtualScroll {
         this.initWrapper();
         this.initRender();
     }
-    hasHorizontalScroll() {
-        return this.wrapperWidth > this.getContainerWidth();
-    }
-    hasVerticalScroll() {
-        return this.wrapperHeight > this.getContainerHeight();
-    }
-    convertDOMRectToScrollRect(domrect) {
-        const rect = {
-            top: domrect.top,
-            right: domrect.right,
-            bottom: domrect.bottom,
-            left: domrect.left,
-            width: domrect.width,
-            height: domrect.height,
-            x: domrect.x,
-            y: domrect.y,
-        };
-        return rect;
-    }
     initContainer() {
         this.removeContainerEvent();
         this.addContainerEvent();
-        this.containerRect = this.convertDOMRectToScrollRect(this.refContainer.getBoundingClientRect());
-        this.calibrationScroll = 'horizontal' === this.options.direction
+        this.containerRect = convertDOMRectToScrollRect(this.refContainer.getBoundingClientRect());
+    }
+    getCurrentScroll() {
+        return 'horizontal' === this.options.direction
             ? this.refContainer.scrollLeft
             : this.refContainer.scrollTop;
-    }
-    getContainerHeight() {
-        return this.refContainer.offsetHeight;
-    }
-    getContainerWidth() {
-        return this.refContainer.offsetWidth;
     }
     addContainerEvent() {
         this.refContainer.addEventListener('scroll', this.bindHandleContainerScroll);
@@ -83,155 +226,65 @@ class MyVirtualScroll {
     initWrapper() {
         this.wrapperStyles = window.getComputedStyle(this.refWrapper);
     }
-    getWrapperMarginTop() {
-        const styles = this.wrapperStyles;
-        const marginTop = Number.parseFloat(styles['marginTop']);
-        return marginTop;
-    }
-    getWrapperMarginLeft() {
-        const styles = this.wrapperStyles;
-        const marginLeft = Number.parseFloat(styles['marginLeft']);
-        return marginLeft;
-    }
-    getWrapperPaddingTop() {
-        const styles = this.wrapperStyles;
-        const paddingTop = Number.parseFloat(styles['paddingTop']);
-        return paddingTop;
-    }
-    getWrapperPaddingLeft() {
-        const styles = this.wrapperStyles;
-        const paddingLeft = Number.parseFloat(styles['paddingLeft']);
-        return paddingLeft;
-    }
-    getWrapperRealMarginTop() {
-        return this.getWrapperMarginTop() + this.getWrapperPaddingTop();
-    }
-    getWrapperRealMarginLeft() {
-        return this.getWrapperMarginLeft() + this.getWrapperPaddingLeft();
-    }
-    getWrapperRealMarginAccordingToDirection = () => {
-        return 'horizontal' === this.options.direction
-            ? this.getWrapperRealMarginLeft()
-            : this.getWrapperRealMarginTop();
-    };
     getWrapperStyle() {
-        const transform = this.wrapperStyles.getPropertyValue('transform');
-        const styles = {};
-        if ('horizontal' === this.options.direction) {
-            if (this.hasHorizontalScroll()) {
-                const translateX = `translateX(${this.wrapperMarginLeft}px)`;
-                styles.transform = 'none' === transform
-                    ? translateX
-                    : this.refWrapper.style.transform.replace(/translateX(.+)/, translateX);
-                styles.width = `${this.wrapperWidth - this.wrapperMarginLeft}px`;
-            }
-        }
-        else {
-            if (this.hasVerticalScroll()) {
-                const translateY = `translateY(${this.wrapperMarginTop}px)`;
-                styles.transform = 'none' === transform
-                    ? translateY
-                    : this.refWrapper.style.transform.replace(/translateY(.+)/, translateY);
-                styles.height = `${this.wrapperHeight - this.wrapperMarginTop}px`;
-            }
-        }
-        return styles;
+        return getWrapperStyle(this.refWrapper, getStyleProp(this.options.direction), this.wrapperPosition);
     }
-    resetWrapperStyles = () => {
+    updateWrapperStyles = (reset = false) => {
         if (!this.options.autoStyles)
             return;
-        if ('horizontal' === this.options.direction) {
-            const translateX = 'translateX(0px)';
-            this.refWrapper.style.transform.replace(/translateX(.+)/, translateX);
-            this.refWrapper.style.transform = this.refWrapper.style.transform.replace(/translateX(.+)/, translateX);
-            this.refWrapper.style.width = 'auto';
-        }
-        else {
-            const translateY = 'translateY(0px)';
-            this.refWrapper.style.transform.replace(/translateY(.+)/, translateY);
-            this.refWrapper.style.transform = this.refWrapper.style.transform.replace(/translateY(.+)/, translateY);
-            this.refWrapper.style.height = 'auto';
-        }
+        const styles = reset
+            ? getResetWrapperStyles(this.refWrapper, getStyleProp(this.options.direction))
+            : getWrapperStyle(this.refWrapper, getStyleProp(this.options.direction), this.wrapperPosition);
+        this.refWrapper.style.cssText = Object.entries(styles).map(v => `${v[0]}: ${v[1]}`).join(';');
     };
-    updateWrapperStyles = () => {
-        if (!this.options.autoStyles)
-            return;
-        const styles = this.getWrapperStyle();
-        for (const [k, v] of Object.entries(styles)) {
-            if (Reflect.has(this.refWrapper.style, k))
-                this.refWrapper.style.setProperty(k, v?.toString() ?? '');
-        }
-    };
-    getBeforeBenchSize(scroll, firstRow) {
-        const [refFirstCoordinate] = this.referenceCoordinates;
-        const firstRowRect = this.rowRects[firstRow];
-        const beforeBenchRowsRect = this.getBeforeBenchRows(firstRow);
-        const beforeBenchFirstRowRect = beforeBenchRowsRect[0];
-        const wrapperMargin = this.getWrapperRealMarginAccordingToDirection();
-        const firstRowHideSize = firstRowRect[refFirstCoordinate] + this.calibrationScroll - this.containerRect[refFirstCoordinate] - wrapperMargin - scroll;
-        return beforeBenchRowsRect.length
-            ? firstRowRect[refFirstCoordinate] - beforeBenchFirstRowRect[refFirstCoordinate] - firstRowHideSize
-            : -firstRowHideSize;
+    initRenderRows() {
+        const ws = wrapperStyles(this.wrapperStyles, this.referenceCoordinates);
+        const rowSize = this.options.rowSize;
+        const rowCount = this.rows.length;
+        const startEmptySize = ws.getStartEmptySize('margin') + ws.getStartEmptySize('padding') + ws.getPairStartEmptySize('border', 'width');
+        this.rowRects = createRowRect(rowCount, this.referenceCoordinates, startEmptySize, rowSize);
+        this.wrapperPosition.size = rowCount * rowSize;
+        this.execScroll(getContainerCurrentScroll(this.refContainer, this.options.direction));
     }
     initDynamicRenderRows() {
-        const wrapperElementChildren = this.refWrapper.children;
-        if (this.rows.length !== wrapperElementChildren.length)
-            console.warn('렌더링 된 Row 개수와 전체 Row 개수가 일치하지 않아 정상적으로 표시되지 않을 수 있습니다.', `rows length ${this.rows.length}`, `child length ${wrapperElementChildren.length}`);
-        this.renderRows = this.rows;
-        this.rowRects = Array.from(wrapperElementChildren).map((v) => this.convertDOMRectToScrollRect(v.getBoundingClientRect()));
-        this.wrapperWidth = this.refWrapper.offsetWidth;
-        this.wrapperHeight = this.refWrapper.offsetHeight;
-        if ('horizontal' === this.options.direction)
-            this.execHorizontalScroll(this.refContainer.scrollLeft);
-        else
-            this.execVerticalScroll(this.refContainer.scrollTop);
-    }
-    initRenderRows() {
-        const wrapperMargin = this.getWrapperRealMarginAccordingToDirection();
-        const rowSize = this.options.rowSize;
-        this.renderRows = this.rows;
-        if ('horizontal' === this.options.direction) {
-            this.rowRects = Array.from(this.rows).map((v, i) => {
-                const left = this.containerRect.left - this.calibrationScroll + wrapperMargin + (rowSize * i);
-                return {
-                    top: 0,
-                    right: left + rowSize,
-                    bottom: 0,
-                    left,
-                    width: 0,
-                    height: 0,
-                    x: 0,
-                    y: 0,
-                };
-            });
-            this.wrapperWidth = this.rows.length * rowSize;
-            this.wrapperHeight = this.refWrapper.offsetHeight;
-            this.execHorizontalScroll(this.refContainer.scrollLeft);
-        }
-        else {
-            this.rowRects = Array.from(this.rows).map((v, i) => {
-                const top = this.containerRect.top - this.calibrationScroll + wrapperMargin + (rowSize * i);
-                return {
-                    top,
-                    right: 0,
-                    bottom: top + rowSize,
-                    left: 0,
-                    width: 0,
-                    height: 0,
-                    x: 0,
-                    y: 0,
-                };
-            });
-            this.wrapperWidth = this.refWrapper.offsetWidth;
-            this.wrapperHeight = this.rows.length * rowSize;
-            this.execVerticalScroll(this.refContainer.scrollTop);
-        }
+        const ws = wrapperStyles(this.wrapperStyles, this.referenceCoordinates);
+        const scroll = this.getCurrentScroll();
+        const wrapperStartEmptySize = ws.getStartEmptySize('margin') + ws.getStartEmptySize('padding');
+        const hideSize = getBeforeBenchSize(this.rowRects, wrapperStartEmptySize, this.referenceCoordinates, scroll, getFirstRow(this.rowRects, this.referenceCoordinates, scroll), this.options.bench);
+        const wrapperChildren = this.refWrapper.children;
+        if (this.rows.length !== wrapperChildren.length)
+            console.warn('렌더링 된 Row 개수와 전체 Row 개수가 일치하지 않아 정상적으로 표시되지 않을 수 있습니다.', `rows length ${this.rows.length}`, `child length ${wrapperChildren.length}`);
+        this.rowRects = createDynamicRowRect(wrapperChildren, this.containerRect, this.referenceCoordinates, hideSize);
+        this.wrapperPosition.size = 'horizontal' === this.options.direction
+            ? this.refWrapper.offsetWidth - ws.getEmptySizeSum('padding')
+            : this.refWrapper.offsetHeight - ws.getEmptySizeSum('padding');
+        this.execScroll(getContainerCurrentScroll(this.refContainer, this.options.direction));
     }
     initRender() {
         if (this.options.rowSize)
             this.initRenderRows();
         else
             this.initDynamicRenderRows();
+        this.initSizeArea();
+    }
+    initSizeArea() {
+        const ws = wrapperStyles(this.wrapperStyles, this.referenceCoordinates);
+        const emptySize = this.wrapperPosition.size + ws.getEmptySizeSum('margin') + ws.getEmptySizeSum('padding') + ws.getPairEmptySizeSum('border', 'width');
+        const styles = `
+      position: absolute;
+      padding-${this.referenceCoordinates[0]}: ${emptySize}px;
+      ${ScrollDirection.Horizontal === this.options.direction ? 'height' : 'width'}: 0.1px;
+    `.trim();
+        if (this.sizeAreaElement) {
+            this.sizeAreaElement.style.cssText = styles;
+        }
+        else {
+            const sizeAreaElement = document.createElement('div');
+            sizeAreaElement.className = `${this.constructor.name.replace(/(?!^)([A-Z])/g, "-$1").toLowerCase()}-height`;
+            sizeAreaElement.style.cssText = styles;
+            this.sizeAreaElement = sizeAreaElement;
+        }
+        this.refContainer.insertAdjacentElement('afterbegin', this.sizeAreaElement);
     }
     getRenderRows() {
         return this.renderRows;
@@ -242,119 +295,57 @@ class MyVirtualScroll {
     getRenderLastRow() {
         return this.renderLastRow;
     }
-    getFirstRow(scroll) {
-        const [refFirstCoordinate, refLastCoordinate] = this.referenceCoordinates;
-        const firstRow = this.rowRects.findIndex((v) => {
-            return scroll <= v[refLastCoordinate] - this.containerRect[refFirstCoordinate] + this.calibrationScroll;
-        });
-        return Math.max(0, firstRow);
-    }
-    getFirstBenchRow(firstRow) {
-        return Math.max(0, firstRow - this.options.bench);
-    }
-    getBeforeBenchRows(firstRow) {
-        return this.rowRects.slice(this.getFirstBenchRow(firstRow), firstRow);
-    }
-    getLastRow(scroll, fr) {
-        const containerSize = 'horizontal' === this.options.direction ? this.getContainerWidth() : this.getContainerHeight();
-        const [refFirstCoordinate] = this.referenceCoordinates;
-        const firstRow = fr ?? this.getFirstRow(scroll);
-        let lastRow = this.rowRects.slice(firstRow, this.rows.length).findIndex((v) => {
-            return scroll + containerSize <= v[refFirstCoordinate] - this.containerRect[refFirstCoordinate] + this.calibrationScroll;
-        });
-        lastRow = -1 === lastRow ? this.rows.length : firstRow + lastRow;
-        return Math.min(this.rows.length, lastRow);
-    }
-    addRenderRows(children) {
-        if ('horizontal' === this.options.direction) {
-            this.rowRects = this.rowRects.concat(Array.from(children).map((v) => {
-                const rect = this.convertDOMRectToScrollRect(v.getBoundingClientRect());
-                return {
-                    ...rect,
-                    left: (this.wrapperWidth += rect.left),
-                    right: (this.wrapperWidth += rect.right),
-                };
-            }));
-            this.execHorizontalScroll(this.refContainer.scrollTop);
-        }
-        else {
-            this.rowRects = this.rowRects.concat(Array.from(children).map((v) => {
-                const rect = this.convertDOMRectToScrollRect(v.getBoundingClientRect());
-                return {
-                    ...rect,
-                    top: (this.wrapperHeight += rect.top),
-                    bottom: (this.wrapperHeight += rect.bottom),
-                };
-            }));
-            this.execVerticalScroll(this.refContainer.scrollTop);
-        }
-    }
-    updateRows(rows) {
-        this.rows = rows;
-        console.log(this.refWrapper.children.length);
-        return {
-            rendered: () => {
-                if (!this.options.rowSize)
-                    this.resetWrapperStyles();
-                this.init();
-            },
-        };
-    }
-    getLastBenchRow(lastRow) {
-        return Math.min(this.rows.length, lastRow + this.options.bench);
-    }
-    execVerticalScroll(scrollTop) {
-        if (!this.rows.length)
-            return;
-        const firstRow = this.getFirstRow(scrollTop);
-        const firstBenchRow = this.getFirstBenchRow(firstRow);
-        const lastRow = this.getLastRow(scrollTop, firstRow);
-        const lastBenchRow = this.getLastBenchRow(lastRow);
-        const beforeRowsHeight = this.getBeforeBenchSize(scrollTop, firstRow);
-        this.renderFirstRow = firstBenchRow;
-        this.renderLastRow = lastBenchRow;
-        this.renderRows = this.rows.slice(firstBenchRow, lastBenchRow);
-        this.wrapperMarginTop = scrollTop - beforeRowsHeight;
-        this.updateWrapperStyles();
-    }
-    moveVerticalScrollToRow(row) {
-        if (!this.rows.length) {
-            console.warn('rows가 존재하지 않습니다.');
-            return;
-        }
-        const [refFirstCoordinate] = this.referenceCoordinates;
-        const rect = this.rowRects[row];
-        const scrollTop = rect[refFirstCoordinate] - this.containerRect[refFirstCoordinate] + this.calibrationScroll;
-        this.refContainer.scrollTo(this.refContainer.scrollLeft, scrollTop);
-    }
-    execHorizontalScroll(scrollLeft) {
-        if (!this.rows.length)
-            return;
-        const firstRow = this.getFirstRow(scrollLeft);
-        const firstBenchRow = this.getFirstBenchRow(firstRow);
-        const lastRow = this.getLastRow(scrollLeft, firstRow);
-        const lastBenchRow = this.getLastBenchRow(lastRow);
-        const beforeRowsWidth = this.getBeforeBenchSize(scrollLeft, firstRow);
-        this.renderFirstRow = firstBenchRow;
-        this.renderLastRow = lastBenchRow;
-        this.renderRows = this.rows.slice(firstBenchRow, lastBenchRow);
-        this.wrapperMarginLeft = scrollLeft - beforeRowsWidth;
-        this.updateWrapperStyles();
-    }
     addContainerScrollEvent(cb) {
         this.callback = cb;
     }
     removeContainerScrollEvent() {
         this.callback = null;
     }
+    updateRows(rows) {
+        this.rows = rows;
+        return {
+            rendered: () => {
+                this.init();
+            },
+        };
+    }
+    moveVerticalScrollToRow(row) {
+        console.warn('moveScrollToRow를 사용해 주세요! moveVerticalScrollToRow는 곧 삭제됩니다.');
+        this.moveScrollToRow(row);
+    }
+    moveScrollToRow(row) {
+        if (!this.rows.length) {
+            console.warn('rows가 존재하지 않습니다.');
+            return;
+        }
+        const [refFirstCoordinate] = this.referenceCoordinates;
+        const rect = this.rowRects[row];
+        const scroll = rect[refFirstCoordinate];
+        if ('horizontal' === this.options.direction)
+            this.refContainer.scrollTo(scroll, this.refContainer.scrollTop);
+        else
+            this.refContainer.scrollTo(this.refContainer.scrollLeft, scroll);
+    }
+    execScroll(scroll) {
+        const ws = wrapperStyles(this.wrapperStyles, this.referenceCoordinates);
+        const wrapperStartSizeSum = ws.getStartEmptySize('margin') + ws.getStartEmptySize('padding');
+        const firstRow = getFirstRow(this.rowRects, this.referenceCoordinates, scroll);
+        const firstBenchRow = getFirstBenchRow(firstRow, this.options.bench);
+        const lastRow = getLastRow(this.rowRects, this.containerRect, this.referenceCoordinates, scroll, firstRow);
+        const lastBenchRow = getLastBenchRow(lastRow, this.rowRects.length, this.options.bench);
+        const beforeRowsSize = getBeforeBenchSize(this.rowRects, wrapperStartSizeSum, this.referenceCoordinates, scroll, firstRow, this.options.bench);
+        this.renderFirstRow = firstBenchRow;
+        this.renderLastRow = lastBenchRow;
+        this.renderRows = this.rows.slice(firstBenchRow, lastBenchRow);
+        this.wrapperPosition.current = wrapperStartSizeSum >= scroll
+            ? 0
+            : scroll - beforeRowsSize - wrapperStartSizeSum;
+        this.updateWrapperStyles();
+    }
     handleContainerScroll(e) {
         const target = e.target;
-        if (target instanceof HTMLElement) {
-            if ('horizontal' === this.options.direction)
-                this.execHorizontalScroll(target.scrollLeft);
-            else
-                this.execVerticalScroll(target.scrollTop);
-        }
+        if (target instanceof HTMLElement)
+            this.execScroll(getContainerCurrentScroll(target, this.options.direction));
         this.callback?.(e);
     }
 }

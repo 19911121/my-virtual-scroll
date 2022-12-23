@@ -205,7 +205,7 @@ const getAppliedInlineStyles = (wrapper: HTMLElement) => {
  * wrapper 적용 할 스타일 반환
  * 
  * @param wrapper 스크롤 wrapper
- * @param direction {@link ScrollRefCoordinates} 
+ * @param styleProp {@link WrapperStyleProp} 
  * @param styleWrapper {@link StyleWrapper} 
  */
 const getWrapperStyle = (wrapper: HTMLElement, styleProp: WrapperStyleProp, styleWrapper: StyleWrapper): StyleReturnType => {
@@ -244,7 +244,6 @@ const getResetWrapperStyles = (wrapper: HTMLElement, styleProp: WrapperStyleProp
 
   return styles;
 };
-
 
 /**
  * {@link SizeSingleName}에 대한 빈 시작영역 사이즈 반환

@@ -1,6 +1,6 @@
 import type { MyVirtualScrollOptions } from "../my-virtual-scroll";
 import type { ScrollRect, ScrollRefCoordinates } from "./scroll";
-declare type Row<T = any> = T;
+type Row<T = any> = T;
 interface Options {
     rowSize: number;
     bench: number;

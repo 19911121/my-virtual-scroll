@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import {jest, describe, expect, test, beforeEach} from '@jest/globals';
+import { describe, expect, test } from '@jest/globals';
 import MyVirtualScroll from '../src/my-virtual-scroll';
 import { createRowRect, getBeforeBenchSize, getFirstRow } from '../src/utils/rows';
 import { getWrapperStyle } from '../src/utils/styles';
@@ -9,10 +9,6 @@ import type { ScrollRefCoordinates } from '../src/utils/scroll';
 
 
 describe('my virtual scroll', () => {
-  beforeEach(() => {
-    window.scrollTo = jest.fn();
-  });
-
   test('empty load', () => {
     const body = document.body;
     const container = document.createElement('div');
